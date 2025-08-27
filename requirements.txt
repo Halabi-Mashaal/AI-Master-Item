@@ -21,3 +21,6 @@ loguru
 # Microsoft Teams Integration
 botbuilder-core
 botbuilder-schema
+
+# HTTP Library
+aiohttp
