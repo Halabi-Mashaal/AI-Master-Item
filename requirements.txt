@@ -1,0 +1,23 @@
+# Python Dependencies
+
+# Core Libraries
+pandas
+numpy
+scikit-learn
+matplotlib
+seaborn
+
+# NLP Libraries
+spacy
+transformers
+
+# Reinforcement Learning
+stable-baselines3
+
+# Dashboard and Logging
+flask
+loguru
+
+# Microsoft Teams Integration
+botbuilder-core
+botbuilder-schema
