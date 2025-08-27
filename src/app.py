@@ -1,4 +1,5 @@
 import os
+import asyncio
 from flask import Flask, request, Response
 from teams_integration.teams_bot import MasterItemBot
 from botbuilder.core import BotFrameworkAdapter, BotFrameworkAdapterSettings
@@ -31,9 +32,12 @@ def messages():
     async def turn_call(turn_context):
         await bot.on_message_activity(turn_context)
 
+    async def messages_async():
+        task = await adapter.process_activity(activity, auth_header, turn_call)
+        return task
+
     try:
-        task = adapter.process_activity(activity, auth_header, turn_call)
-        task.result()
+        asyncio.run(messages_async())
         return Response(status=201)
     except Exception as e:
         return Response(status=500, response=str(e))
