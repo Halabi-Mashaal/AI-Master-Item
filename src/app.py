@@ -13,6 +13,7 @@ logging.basicConfig(level=logging.DEBUG)
 try:
     nlp = spacy.load("en_core_web_sm")
 except OSError:
+    logging.warning("The 'en_core_web_sm' model is missing. Attempting to download it dynamically.")
     download("en_core_web_sm")
     nlp = spacy.load("en_core_web_sm")
 
@@ -25,6 +26,7 @@ def messages():
     """
     Endpoint for Microsoft Teams messages.
     """
+    logging.debug(f"Received request: {request.data}")
     if "application/json" in request.headers["Content-Type"]:
         body = request.json
     else:
@@ -38,8 +40,9 @@ def messages():
     entities = [(ent.text, ent.label_) for ent in doc.ents]
     response_text = f"You said: {message}. Detected entities: {entities}"
 
+    logging.debug(f"Response: {response_text}")
     return Response(response_text, status=200)
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    port = int(os.environ.get("PORT", 8000))
+    app.run(host="0.0.0.0", port=port, debug=False)
