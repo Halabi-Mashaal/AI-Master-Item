@@ -1,5 +1,6 @@
 import os
 import asyncio
+import logging
 from flask import Flask, request, Response
 from teams_integration.teams_bot import MasterItemBot
 from botbuilder.core import BotFrameworkAdapter, BotFrameworkAdapterSettings
@@ -11,6 +12,8 @@ app = Flask(__name__)
 settings = BotFrameworkAdapterSettings(app_id="", app_password="")
 adapter = BotFrameworkAdapter(settings)
 bot = MasterItemBot()
+
+logging.basicConfig(level=logging.DEBUG)
 
 @app.route('/')
 def home():
@@ -28,6 +31,8 @@ def messages():
 
     activity = Activity().deserialize(body)
     auth_header = request.headers["Authorization"] if "Authorization" in request.headers else ""
+
+    logging.debug(f"Activity: {activity}")
 
     async def turn_call(turn_context):
         await bot.on_message_activity(turn_context)
