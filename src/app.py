@@ -34,6 +34,9 @@ def messages():
 
     logging.debug(f"Activity: {activity}")
 
+    if 'service_url' in activity.additional_properties:
+        activity.service_url = activity.additional_properties['service_url']
+
     async def turn_call(turn_context):
         await bot.on_message_activity(turn_context)
 
