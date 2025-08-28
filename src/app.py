@@ -2,10 +2,14 @@ import os
 import asyncio
 import logging
 from flask import Flask, request, Response
+import spacy
 
 app = Flask(__name__)
 
 logging.basicConfig(level=logging.DEBUG)
+
+# Load spaCy model
+nlp = spacy.load("en_core_web_sm")
 
 @app.route('/')
 def home():
@@ -21,15 +25,13 @@ def messages():
     else:
         return Response(status=415)
 
-    # Custom message handling logic
-    message = body.get("text", "").lower()
+    # Process message with spaCy
+    message = body.get("text", "")
+    doc = nlp(message)
 
-    if "hello" in message:
-        response_text = "Hi there! How can I assist you today?"
-    elif "help" in message:
-        response_text = "Sure! Let me know what you need help with."
-    else:
-        response_text = f"Sorry, I didn't understand that. You said: {message}"
+    # Extract entities and intent
+    entities = [(ent.text, ent.label_) for ent in doc.ents]
+    response_text = f"You said: {message}. Detected entities: {entities}"
 
     return Response(response_text, status=200)
 
