@@ -22,8 +22,14 @@ def messages():
         return Response(status=415)
 
     # Custom message handling logic
-    message = body.get("text", "")
-    response_text = f"You said: {message}"
+    message = body.get("text", "").lower()
+
+    if "hello" in message:
+        response_text = "Hi there! How can I assist you today?"
+    elif "help" in message:
+        response_text = "Sure! Let me know what you need help with."
+    else:
+        response_text = f"Sorry, I didn't understand that. You said: {message}"
 
     return Response(response_text, status=200)
 
