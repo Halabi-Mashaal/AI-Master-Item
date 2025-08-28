@@ -38,7 +38,12 @@ def messages():
         await bot.on_message_activity(turn_context)
 
     async def messages_async():
+        logging.debug("Starting process_activity")
+        logging.debug(f"Service URL: {activity.service_url}")
+        
         task = await adapter.process_activity(activity, auth_header, turn_call)
+        
+        logging.debug("Finished process_activity")
         return task
 
     try:
