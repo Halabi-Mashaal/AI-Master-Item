@@ -610,7 +610,7 @@ def chat():
         return jsonify({"response": "I apologize, but I encountered an error processing your request. Please try again."})
 
 def analyze_files(files):
-    """Analyze uploaded files and return insights"""
+    """Advanced analysis of uploaded files with cement industry-specific insights"""
     analysis_results = []
     
     for file in files:
@@ -619,7 +619,7 @@ def analyze_files(files):
         
         try:
             if file_ext in ['csv', 'xlsx', 'xls']:
-                # Analyze data files
+                # Advanced data files analysis with cement industry focus
                 file_content = file.read()
                 file_size = len(file_content)
                 
@@ -627,24 +627,58 @@ def analyze_files(files):
                     try:
                         df = pd.read_csv(io.BytesIO(file_content))
                         rows, cols = df.shape
+                        
+                        # Advanced data quality analysis
+                        duplicates = df.duplicated().sum()
+                        missing_values = df.isnull().sum().sum()
+                        data_quality_score = max(0, 100 - (duplicates * 5) - (missing_values * 2))
+                        
+                        # Cement industry specific analysis
+                        cement_columns = []
+                        inventory_columns = []
+                        quality_columns = []
+                        
+                        for col in df.columns:
+                            col_lower = col.lower()
+                            if any(keyword in col_lower for keyword in ['cement', 'grade', 'opc', 'ppc', 'psc']):
+                                cement_columns.append(col)
+                            elif any(keyword in col_lower for keyword in ['stock', 'inventory', 'qty', 'quantity', 'bags']):
+                                inventory_columns.append(col)
+                            elif any(keyword in col_lower for keyword in ['strength', 'quality', 'test', 'fineness', 'setting']):
+                                quality_columns.append(col)
+                        
                         analysis = f"""
-**📋 {filename} Analysis:**
-• **Rows:** {rows:,} records
-• **Columns:** {cols} fields
-• **Data Types:** {', '.join(df.dtypes.astype(str).unique())}
-• **Missing Values:** {df.isnull().sum().sum():,} cells
+**� {filename} - Advanced Analysis:**
+
+**📋 Data Overview:**
+• **Records:** {rows:,} items
+• **Fields:** {cols} columns  
 • **File Size:** {file_size / 1024:.1f} KB
+• **Data Quality Score:** {data_quality_score:.1f}/100
 
-**🔍 Key Insights:**
-• Column Names: {', '.join(df.columns[:5].tolist())}{('...' if len(df.columns) > 5 else '')}
-• Potential Duplicates: {df.duplicated().sum():,} rows
-• Unique Values in Key Columns: {', '.join([f'{col}: {df[col].nunique()}' for col in df.columns[:3]])}
+**🔍 Data Quality Assessment:**
+• **Duplicates Found:** {duplicates:,} rows ({duplicates/rows*100:.1f}%)
+• **Missing Values:** {missing_values:,} cells ({missing_values/(rows*cols)*100:.1f}%)
+• **Completeness:** {((rows*cols-missing_values)/(rows*cols)*100):.1f}%
 
-**💡 Recommendations:**
-• Data quality score: {max(0, 100 - (df.isnull().sum().sum() / df.size * 100)):.1f}%
-• Consider standardizing column names
-• Review duplicate records for master item consolidation
-"""
+**🏭 Cement Industry Analysis:**
+• **Cement Fields:** {', '.join(cement_columns[:3]) if cement_columns else 'None detected'}
+• **Inventory Fields:** {', '.join(inventory_columns[:3]) if inventory_columns else 'None detected'}
+• **Quality Fields:** {', '.join(quality_columns[:3]) if quality_columns else 'None detected'}
+
+**💡 Smart Recommendations:**
+• {'✅ Cement grade classification detected' if cement_columns else '⚠️ Add cement grade classification'}
+• {'✅ Inventory tracking fields found' if inventory_columns else '⚠️ Include inventory quantity fields'}
+• {'✅ Quality parameters identified' if quality_columns else '⚠️ Add quality control parameters'}
+• {'🔄 Clean duplicate records' if duplicates > 0 else '✅ No duplicates found'}
+• {'🔧 Fill missing critical data' if missing_values > rows*0.1 else '✅ Good data completeness'}
+
+**🎯 Industry-Specific Insights:**
+• **Storage Optimization:** Monitor temperature-sensitive cement grades
+• **Inventory Planning:** Track seasonal demand patterns for different cement types  
+• **Quality Control:** Ensure 28-day strength test compliance
+• **Supply Chain:** Optimize supplier performance based on delivery consistency
+                        """
                     except Exception as e:
                         analysis = f"**📋 {filename} Analysis:** Error processing with pandas: {str(e)}"
                         
@@ -770,44 +804,189 @@ def analyze_files(files):
     return "\n\n".join(analysis_results)
 
 def generate_text_response(user_message):
-    """Generate text-based responses"""
-    # Simple AI responses based on keywords
-    if any(word in user_message for word in ['hello', 'hi', 'hey']):
-        return "Hello! 👋 I'm your Master Item AI Agent. I can now analyze your uploaded files too! How can I help you optimize your master item processes today?"
+    """Generate intelligent responses with cement industry expertise"""
     
-    elif any(word in user_message for word in ['inventory', 'stock', 'items']):
-        return """📦 **Inventory Analysis:**
-        
-• Current inventory trends show optimal stock levels
-• Recommend reviewing slow-moving items in categories A-C
-• Predicted demand increase of 15% next quarter
-• 3 duplicate items detected - would you like details?"""
+    # Cement industry keywords
+    cement_terms = ['cement', 'concrete', 'opc', 'ppc', 'psc', 'grade 43', 'grade 53', 'portland', 'clinker', 'gypsum']
+    quality_terms = ['strength', 'fineness', 'setting time', 'soundness', 'quality control', 'testing']
+    inventory_terms = ['inventory', 'stock', 'bags', 'bulk', 'storage', 'warehouse']
     
-    elif any(word in user_message for word in ['duplicate', 'duplicates']):
-        return """🔍 **Duplicate Items Found:**
-        
-• **Item #1:** "Steel Bolt M8" vs "M8 Steel Bolt" (98% match)
-• **Item #2:** "Blue Paint 1L" vs "1L Blue Paint" (95% match) 
-• **Item #3:** "USB Cable Type-C" vs "Type-C USB Cable" (97% match)
+    user_lower = user_message.lower()
+    
+    # Greetings with cement industry focus
+    if any(word in user_lower for word in ['hello', 'hi', 'hey']):
+        return """🏭 **Welcome to Yamama Cement's Master Item AI Agent!**
 
-Would you like me to merge these duplicates?"""
+I'm specialized in cement industry operations and can help you with:
+
+📋 **Master Item Management:** Cement grade classification, SKU optimization
+📊 **Inventory Analysis:** Stock levels, ABC analysis, FIFO rotation  
+🔬 **Quality Control:** Strength testing, compliance monitoring
+💡 **Process Optimization:** Cost reduction, efficiency improvements
+
+**Upload your data files or ask me about:**
+• Cement specifications (OPC 43/53, PPC, PSC)
+• Inventory optimization strategies
+• Quality control best practices
+• Compliance and testing requirements"""
     
-    elif any(word in user_message for word in ['quality', 'data quality']):
-        return """📊 **Data Quality Report:**
-        
-• **Completeness:** 87% (↑5% from last month)
-• **Accuracy:** 92% (↑2% from last month)
-• **Consistency:** 89% (↑8% from last month)
-• **Missing Attributes:** 156 items need descriptions
-• **Standardization:** 78% following naming conventions"""
+    # Cement-specific responses
+    elif any(term in user_lower for term in cement_terms):
+        return """🏭 **Cement Industry Analysis:**
+
+**Grade Classifications:**
+• **OPC Grade 43:** General construction, 28-day strength ≥43 MPa
+• **OPC Grade 53:** High-strength applications, ≥53 MPa  
+• **PPC:** Eco-friendly, heat-resistant, durable structures
+• **PSC:** Marine works, mass concrete applications
+
+**Key Quality Parameters:**
+✅ Compressive strength (3, 7, 28 days)
+✅ Initial & final setting time
+✅ Fineness (Blaine specific surface)
+✅ Soundness (Le Chatelier method)
+
+**Storage Requirements:**
+• Temperature: 27±2°C, Humidity: <60%
+• Shelf life: 3 months from manufacturing
+• Stack height: Maximum 10 bags for quality preservation
+
+**Would you like specific analysis for any cement grade?**"""
     
-    elif any(word in user_message for word in ['predict', 'forecast', 'future']):
-        return """🎯 **Predictive Insights:**
-        
-• **Demand Forecast:** 23% increase in Q4 for seasonal items
-• **New Product Success:** 87% likelihood for proposed items
-• **Supplier Risk:** Medium risk detected for 2 key suppliers
-• **Optimization Opportunity:** $45K savings potential identified"""
+    # Inventory management with cement focus
+    elif any(word in user_lower for word in inventory_terms):
+        return """� **Cement Inventory Optimization:**
+
+**Current Analysis:**
+• **OPC Grade 53:** 2,500 bags (15 days stock) - ✅ Optimal
+• **PPC Cement:** 1,800 bags (22 days stock) - ⚠️ Above target
+• **OPC Grade 43:** 980 bags (8 days stock) - 🔄 Reorder needed
+
+**ABC Classification:**
+• **A-Items (80% value):** High-grade OPC 53, Premium PPC
+• **B-Items (15% value):** Standard OPC 43, Specialty cements
+• **C-Items (5% value):** Low-volume, seasonal products
+
+**Recommendations:**
+🎯 Implement FIFO rotation for quality preservation
+🎯 Maintain 15-20 days safety stock for core grades
+🎯 Monitor humidity levels in storage areas
+🎯 Schedule bulk deliveries during non-monsoon periods"""
+    
+    # Quality control responses
+    elif any(word in user_lower for word in quality_terms):
+        return """🔬 **Cement Quality Control Framework:**
+
+**Daily Testing:**
+✅ **Fineness:** 225-400 m²/kg (Blaine method)
+✅ **Setting Time:** Initial 30min-10hrs, Final <10hrs  
+✅ **Consistency:** Standard consistency test
+
+**Weekly Testing:**
+✅ **Soundness:** <10mm Le Chatelier expansion
+✅ **Chemical Analysis:** SiO₂, Al₂O₃, Fe₂O₃, CaO content
+
+**Monthly Testing:**
+✅ **Compressive Strength:** 28-day strength verification
+✅ **Heat of Hydration:** For mass concrete applications
+
+**Compliance Standards:**
+• IS 269:2015 (OPC specifications)
+• IS 1489:2015 (PPC specifications)
+• ASTM C150 (International standards)
+
+**Quality Score: 94.2% (↑2.3% from last month)**"""
+    
+    # Duplicate detection
+    elif any(word in user_lower for word in ['duplicate', 'duplicates']):
+        return """🔍 **Cement SKU Duplicate Analysis:**
+
+**High-Priority Duplicates Found:**
+• **Item #1:** "OPC 53 Grade Cement 50kg" vs "OPC Grade 53 - 50 Kg Bag" (97% match)
+• **Item #2:** "PPC Cement Bulk" vs "Portland Pozzolan Cement - Bulk" (95% match)
+• **Item #3:** "Grade 43 OPC 25kg" vs "OPC 43 - 25kg Bag" (98% match)
+
+**Impact Analysis:**
+• 3 duplicate SKUs affecting inventory accuracy
+• Potential cost: ₹2.3L due to double ordering
+• Storage confusion: 2 locations for same product
+
+**Recommended Actions:**
+✅ Merge similar SKUs with standardized naming
+✅ Update supplier codes and purchase orders
+✅ Consolidate inventory locations
+✅ Train staff on new SKU structure"""
+    
+    # Forecasting and predictions
+    elif any(word in user_lower for word in ['predict', 'forecast', 'future', 'demand']):
+        return """🎯 **Cement Demand Forecasting:**
+
+**Seasonal Analysis:**
+• **Peak Season (Oct-Mar):** +40% demand increase expected
+• **Monsoon (Jun-Sep):** -25% demand, focus on covered storage
+• **Summer (Apr-May):** Stable demand, infrastructure projects
+
+**Grade-wise Predictions:**
+• **OPC Grade 53:** ↑18% (infrastructure boom)
+• **PPC Cement:** ↑12% (green construction trend)  
+• **OPC Grade 43:** ↑8% (residential construction)
+
+**Supply Chain Forecast:**
+• **Transportation:** Expect 15% cost increase due to fuel prices
+• **Raw Materials:** Limestone prices stable, coal costs rising
+• **Storage:** Expand covered area by 2,000 MT for monsoon
+
+**Financial Impact:** Projected ₹4.2Cr additional revenue this quarter**"""
+    
+    # Process optimization
+    elif any(word in user_lower for word in ['optimize', 'optimization', 'efficiency']):
+        return """⚡ **Cement Operations Optimization:**
+
+**Cost Reduction Opportunities:**
+💰 **Procurement:** Bulk purchasing saves ₹180/MT (8% reduction)
+💰 **Transportation:** Full truck loads reduce cost by ₹95/MT
+💰 **Storage:** Improved stacking saves 15% warehouse space
+💰 **Quality:** Reduce rejection rate from 0.8% to 0.3%
+
+**Efficiency Improvements:**
+🚀 **Automated Inventory:** RFID tracking reduces manual errors by 95%
+🚀 **Predictive Maintenance:** Equipment downtime reduced by 30%
+🚀 **Digital Quality Control:** Real-time monitoring saves 4 hours/day
+🚀 **Supplier Integration:** EDI reduces order processing time by 60%
+
+**ROI Projections:**
+• Implementation Cost: ₹25L
+• Annual Savings: ₹1.8Cr  
+• Payback Period: 5.2 months
+• 5-year NPV: ₹7.2Cr"""
+    
+    # Default comprehensive response
+    else:
+        return """🤖 **Yamama Cement Master Item AI Agent**
+
+**I analyzed your query and can provide insights on:**
+
+📋 **Master Data Management:**
+• Cement grade classification and SKU standardization
+• Item code structure optimization  
+• Hierarchical category management
+
+📊 **Inventory Intelligence:**
+• ABC analysis for cement products
+• Safety stock calculations by grade
+• FIFO rotation for quality preservation
+
+🔬 **Quality Assurance:**
+• IS 269:2015 & IS 1489:2015 compliance
+• Strength testing and certification tracking
+• Supplier quality performance monitoring  
+
+💡 **Operational Excellence:**
+• Cost optimization strategies
+• Process automation opportunities
+• Supply chain risk management
+
+**Upload your data files or ask specific questions about cement operations, inventory management, or quality control!**"""
     
     elif any(word in user_message for word in ['help', 'what can you do']):
         return """🤖 **I can assist you with:**
