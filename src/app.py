@@ -279,6 +279,98 @@ CHAT_TEMPLATE = """
             text-align: center;
             margin-left: 140px;
         }
+        .language-selector {
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            display: flex;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 5px;
+            gap: 5px;
+        }
+        .lang-btn {
+            background: transparent;
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .lang-btn.active {
+            background: white;
+            color: #2E7D32;
+            font-weight: bold;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .lang-btn.active:hover {
+            background: white;
+        }
+        .control-buttons {
+            position: absolute;
+            bottom: 15px;
+            right: 25px;
+            display: flex;
+            gap: 10px;
+        }
+        .control-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .control-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .restart-btn {
+            background: rgba(244, 67, 54, 0.2);
+            border-color: rgba(244, 67, 54, 0.3);
+        }
+        .restart-btn:hover {
+            background: rgba(244, 67, 54, 0.3);
+        }
+        
+        /* RTL Support for Arabic */
+        .rtl {
+            direction: rtl;
+            text-align: right;
+        }
+        .rtl .logo-container {
+            left: auto;
+            right: 25px;
+        }
+        .rtl .language-selector {
+            right: auto;
+            left: 25px;
+        }
+        .rtl .control-buttons {
+            right: auto;
+            left: 25px;
+        }
+        .rtl .header-content {
+            margin-left: 0;
+            margin-right: 140px;
+        }
+        .rtl .message.user {
+            justify-content: flex-start;
+        }
+        .rtl .message.bot {
+            justify-content: flex-end;
+        }
+        .rtl .message-content {
+            text-align: right;
+        }
+        .rtl .input-container input {
+            text-align: right;
+        }
         .header h1 { 
             font-size: 28px; 
             margin-bottom: 8px;
@@ -510,7 +602,7 @@ CHAT_TEMPLATE = """
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container" id="mainContainer">
         <div class="header">
             <div class="logo-container">
                 <div class="logo">
@@ -518,26 +610,108 @@ CHAT_TEMPLATE = """
                     <div class="english">YAMAMA CEMENT</div>
                 </div>
             </div>
+            <div class="language-selector">
+                <button class="lang-btn active" onclick="switchLanguage('en')" id="enBtn">🇺🇸 EN</button>
+                <button class="lang-btn" onclick="switchLanguage('ar')" id="arBtn">🇸🇦 AR</button>
+            </div>
             <div class="header-content">
-                <h1>🤖 Master Item AI Agent</h1>
-                <p>Your intelligent assistant for master item management and optimization</p>
+                <h1 id="mainTitle">🤖 Master Item AI Agent</h1>
+                <p id="mainSubtitle">Your intelligent assistant for master item management and optimization</p>
+            </div>
+            <div class="control-buttons">
+                <button class="control-btn" onclick="getConversationMemory()" id="memoryBtn">🧠 Memory</button>
+                <button class="control-btn restart-btn" onclick="restartChat()" id="restartBtn">🔄 Restart Chat</button>
             </div>
         </div>
         <div class="chat-container" id="chatContainer">
             <div class="message bot">
-                <div class="message-content">
-                    👋 <strong>Welcome to Yamama Cement's Master Item AI Agent!</strong>
-                    <br><br>
-                    I'm here to help you with:
-                    <br><br>
-                    • 📋 <strong>Master item management</strong> - Clean and organize your data
-                    • 🔍 <strong>Inventory analysis</strong> - Track and optimize stock levels
-                    • 📊 <strong>Data quality insights</strong> - Improve data accuracy and completeness
-                    • 🎯 <strong>Predictive recommendations</strong> - Forecast demand and trends
-                    • ⚙️ <strong>Process optimization</strong> - Streamline your workflows
-                    • 📁 <strong>File analysis</strong> - Upload and analyze CSV, Excel, images, and documents
-                    <br><br>
-                    How can I assist you today?
+                <div class="message-content" id="welcomeMessage">
+                    <div class="en-content">
+                        <strong>🏭 Welcome to Yamama Cement's Advanced Master Item AI Agent!</strong>
+                        <br><br>
+                        <strong>🤖 What I Can Do For You:</strong>
+                        <br><br>
+                        <strong>📊 Data Analysis & Intelligence:</strong>
+                        <br>• Analyze CSV, Excel files with advanced pattern recognition
+                        <br>• Generate data quality reports with 95%+ accuracy
+                        <br>• Identify duplicates and data inconsistencies
+                        <br>• Extract insights from documents, images, and PDFs
+                        <br><br>
+                        <strong>🏭 Cement Industry Expertise:</strong>
+                        <br>• OPC Grade 43/53, PPC, PSC specifications and applications
+                        <br>• Quality control parameters (strength, fineness, setting time)
+                        <br>• IS 269:2015, IS 1489:2015, ASTM C150 compliance checking
+                        <br>• Storage requirements and shelf-life optimization
+                        <br><br>
+                        <strong>📦 Inventory Management:</strong>
+                        <br>• ABC analysis and inventory classification
+                        <br>• Demand forecasting with machine learning
+                        <br>• Safety stock calculations and reorder optimization
+                        <br>• FIFO rotation and quality preservation strategies
+                        <br><br>
+                        <strong>🎯 Predictive Analytics:</strong>
+                        <br>• Seasonal demand patterns and trend analysis
+                        <br>• Cost optimization with ROI calculations
+                        <br>• Supply chain risk assessment
+                        <br>• Equipment maintenance predictions
+                        <br><br>
+                        <strong>🧠 Advanced AI Features:</strong>
+                        <br>• 100-prompt conversation memory
+                        <br>• Adaptive learning based on your expertise level
+                        <br>• Contextual responses with historical awareness
+                        <br>• Personalized recommendations and insights
+                        <br><br>
+                        <strong>💡 How to Use:</strong>
+                        <br>• Ask questions about cement operations, inventory, or quality
+                        <br>• Upload files (up to 50MB) for instant AI analysis
+                        <br>• Request specific recommendations for your processes
+                        <br>• Switch to Arabic (العربية) using the language toggle above
+                        <br><br>
+                        <strong>Ready to optimize your cement operations? How can I assist you today?</strong>
+                    </div>
+                    <div class="ar-content" style="display: none;">
+                        <strong>🏭 مرحباً بكم في وكيل الذكاء الاصطناعي المتقدم لإدارة البنود الرئيسية من شركة اسمنت اليمامة!</strong>
+                        <br><br>
+                        <strong>🤖 ما يمكنني فعله لك:</strong>
+                        <br><br>
+                        <strong>📊 تحليل البيانات والذكاء:</strong>
+                        <br>• تحليل ملفات CSV و Excel بتقنيات التعرف على الأنماط المتقدمة
+                        <br>• إنتاج تقارير جودة البيانات بدقة تزيد عن 95%
+                        <br>• تحديد التكرارات وعدم اتساق البيانات
+                        <br>• استخراج المعلومات من المستندات والصور وملفات PDF
+                        <br><br>
+                        <strong>🏭 خبرة صناعة الاسمنت:</strong>
+                        <br>• مواصفات وتطبيقات الاسمنت العادي درجة 43/53، PPC، PSC
+                        <br>• معايير مراقبة الجودة (القوة، النعومة، وقت الشك)
+                        <br>• فحص الامتثال لمعايير IS 269:2015، IS 1489:2015، ASTM C150
+                        <br>• متطلبات التخزين وتحسين مدة الصلاحية
+                        <br><br>
+                        <strong>📦 إدارة المخزون:</strong>
+                        <br>• تحليل ABC وتصنيف المخزون
+                        <br>• توقع الطلب باستخدام التعلم الآلي
+                        <br>• حسابات المخزون الآمن وتحسين إعادة الطلب
+                        <br>• استراتيجيات دوران FIFO والحفاظ على الجودة
+                        <br><br>
+                        <strong>🎯 التحليلات التنبؤية:</strong>
+                        <br>• أنماط الطلب الموسمية وتحليل الاتجاهات
+                        <br>• تحسين التكلفة مع حسابات العائد على الاستثمار
+                        <br>• تقييم مخاطر سلسلة التوريد
+                        <br>• توقعات صيانة المعدات
+                        <br><br>
+                        <strong>🧠 ميزات الذكاء الاصطناعي المتقدمة:</strong>
+                        <br>• ذاكرة محادثة تصل إلى 100 استفسار
+                        <br>• تعلم تكيفي بناءً على مستوى خبرتك
+                        <br>• ردود سياقية مع الوعي التاريخي
+                        <br>• توصيات ورؤى مخصصة
+                        <br><br>
+                        <strong>💡 كيفية الاستخدام:</strong>
+                        <br>• اسأل أسئلة حول عمليات الاسمنت والمخزون أو الجودة
+                        <br>• ارفع الملفات (حتى 50 ميجابايت) للتحليل الفوري بالذكاء الاصطناعي
+                        <br>• اطلب توصيات محددة لعملياتك
+                        <br>• انتقل إلى الإنجليزية (English) باستخدام مفتاح اللغة أعلاه
+                        <br><br>
+                        <strong>مستعد لتحسين عمليات الاسمنت الخاصة بك؟ كيف يمكنني مساعدتك اليوم؟</strong>
+                    </div>
                 </div>
             </div>
             <div class="typing-indicator" id="typingIndicator">
@@ -668,9 +842,171 @@ CHAT_TEMPLATE = """
             document.getElementById('typingIndicator').classList.remove('show');
         }
 
-        // Memory and Learning Features
-        let conversationCount = 0;
-        let userExpertiseLevel = 'intermediate';
+        // Language and UI Management
+        let currentLanguage = 'en';
+        
+        const translations = {
+            en: {
+                mainTitle: "🤖 Master Item AI Agent",
+                mainSubtitle: "Your intelligent assistant for master item management and optimization",
+                memoryBtn: "🧠 Memory",
+                restartBtn: "🔄 Restart Chat",
+                uploadText: "Upload Files",
+                uploadSubtext: "Drag & drop or click to upload CSV, Excel, Word, PDF, Images (Max 50MB)",
+                inputPlaceholder: "Ask me about master items, inventory, or upload files for analysis...",
+                sendBtn: "Send"
+            },
+            ar: {
+                mainTitle: "🤖 وكيل الذكاء الاصطناعي للبنود الرئيسية",
+                mainSubtitle: "مساعدك الذكي لإدارة وتحسين البنود الرئيسية",
+                memoryBtn: "🧠 الذاكرة",
+                restartBtn: "🔄 إعادة تشغيل المحادثة",
+                uploadText: "رفع الملفات",
+                uploadSubtext: "اسحب وأفلت أو انقر لرفع CSV, Excel, Word, PDF, الصور (حد أقصى 50 ميجابايت)",
+                inputPlaceholder: "اسألني عن البنود الرئيسية أو المخزون أو ارفع الملفات للتحليل...",
+                sendBtn: "إرسال"
+            }
+        };
+
+        function switchLanguage(lang) {
+            currentLanguage = lang;
+            const container = document.getElementById('mainContainer');
+            
+            // Toggle RTL/LTR
+            if (lang === 'ar') {
+                container.classList.add('rtl');
+                document.body.style.fontFamily = "'Arial', 'Tahoma', sans-serif";
+            } else {
+                container.classList.remove('rtl');
+                document.body.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+            }
+            
+            // Update UI text
+            updateUIText(lang);
+            
+            // Update language buttons
+            document.getElementById('enBtn').classList.toggle('active', lang === 'en');
+            document.getElementById('arBtn').classList.toggle('active', lang === 'ar');
+            
+            // Update welcome message
+            const enContent = document.querySelector('.en-content');
+            const arContent = document.querySelector('.ar-content');
+            
+            if (lang === 'ar') {
+                enContent.style.display = 'none';
+                arContent.style.display = 'block';
+            } else {
+                enContent.style.display = 'block';
+                arContent.style.display = 'none';
+            }
+        }
+
+        function updateUIText(lang) {
+            const t = translations[lang];
+            
+            document.getElementById('mainTitle').textContent = t.mainTitle;
+            document.getElementById('mainSubtitle').textContent = t.mainSubtitle;
+            document.getElementById('memoryBtn').innerHTML = t.memoryBtn;
+            document.getElementById('restartBtn').innerHTML = t.restartBtn;
+            
+            // Update file upload area
+            document.querySelector('.file-upload-text').textContent = t.uploadText;
+            document.querySelector('.file-upload-subtitle').textContent = t.uploadSubtext;
+            
+            // Update input and button
+            document.getElementById('messageInput').placeholder = t.inputPlaceholder;
+            document.getElementById('sendButton').textContent = t.sendBtn;
+        }
+
+        async function restartChat() {
+            const confirmMessage = currentLanguage === 'ar' 
+                ? 'هل تريد إعادة تشغيل المحادثة؟ سيتم مسح جميع الرسائل والذاكرة.'
+                : 'Restart the entire chat? This will clear all messages and memory.';
+                
+            if (confirm(confirmMessage)) {
+                try {
+                    // Reset memory
+                    await fetch('/reset_memory', { method: 'POST' });
+                    
+                    // Clear chat container
+                    const chatContainer = document.getElementById('chatContainer');
+                    
+                    // Keep only welcome message and typing indicator
+                    const welcomeMessage = document.querySelector('.message.bot');
+                    const typingIndicator = document.getElementById('typingIndicator');
+                    
+                    chatContainer.innerHTML = '';
+                    chatContainer.appendChild(welcomeMessage);
+                    chatContainer.appendChild(typingIndicator);
+                    
+                    // Reset counters
+                    conversationCount = 0;
+                    userExpertiseLevel = 'intermediate';
+                    updateExpertiseIndicator();
+                    
+                    // Clear input and files
+                    document.getElementById('messageInput').value = '';
+                    selectedFiles = [];
+                    updateFileList();
+                    
+                    // Show success message
+                    const successMessage = currentLanguage === 'ar'
+                        ? '🔄 تم إعادة تشغيل المحادثة بنجاح! مرحباً بك من جديد.'
+                        : '🔄 Chat restarted successfully! Welcome back to a fresh conversation.';
+                    
+                    setTimeout(() => {
+                        addMessage(successMessage, false);
+                    }, 500);
+                    
+                } catch (error) {
+                    const errorMessage = currentLanguage === 'ar'
+                        ? '❌ خطأ في إعادة التشغيل. يرجى المحاولة مرة أخرى.'
+                        : '❌ Restart failed. Please try again.';
+                    
+                    addMessage(errorMessage, false);
+                }
+            }
+        }
+
+        // Enhanced memory function with language support
+        async function getConversationMemory() {
+            try {
+                const response = await fetch('/memory');
+                const data = await response.json();
+                
+                if (data.error) {
+                    const errorMsg = currentLanguage === 'ar'
+                        ? `🧠 حالة الذاكرة: ${data.error}`
+                        : `🧠 Memory Status: ${data.error}`;
+                    addMessage(errorMsg, false);
+                } else {
+                    let memoryInfo;
+                    
+                    if (currentLanguage === 'ar') {
+                        memoryInfo = `🧠 <strong>ذاكرة المحادثة:</strong><br>
+                        • <strong>معرف الجلسة:</strong> ${data.session_id.substring(0, 8)}...<br>
+                        • <strong>عدد المحادثات:</strong> ${data.conversation_count}<br>
+                        • <strong>مستوى الخبرة:</strong> ${data.user_profile.technical_level || 'يتعلم...'}<br>
+                        • <strong>الاهتمام الأساسي:</strong> ${data.context_summary.primary_interest}<br>
+                        • <strong>المواضيع الأخيرة:</strong> ${data.context_summary.recent_topics.join(', ') || 'التعرف عليك...'}`;
+                    } else {
+                        memoryInfo = `🧠 <strong>Conversation Memory:</strong><br>
+                        • <strong>Session ID:</strong> ${data.session_id.substring(0, 8)}...<br>
+                        • <strong>Conversation Count:</strong> ${data.conversation_count}<br>
+                        • <strong>Expertise Level:</strong> ${data.user_profile.technical_level || 'Learning...'}<br>
+                        • <strong>Primary Interest:</strong> ${data.context_summary.primary_interest}<br>
+                        • <strong>Recent Topics:</strong> ${data.context_summary.recent_topics.join(', ') || 'Getting to know you...'}`;
+                    }
+                    
+                    addMessage(memoryInfo, false);
+                }
+            } catch (error) {
+                const errorMsg = currentLanguage === 'ar'
+                    ? '🔧 خطأ في الذاكرة: لا يمكن استرداد ذاكرة المحادثة.'
+                    : '🔧 Memory Error: Could not retrieve conversation memory.';
+                addMessage(errorMsg, false);
+            }
+        }
 
         async function sendMessage() {
             const input = document.getElementById('messageInput');
@@ -821,41 +1157,13 @@ CHAT_TEMPLATE = """
             }
         }
 
-        // Add memory controls to the UI
+        // Add memory controls to the UI - removed since now in header
         window.addEventListener('load', function() {
-            const headerContent = document.querySelector('.header-content');
-            const memoryControls = document.createElement('div');
-            memoryControls.style.cssText = `
-                position: absolute;
-                top: 70px;
-                right: 25px;
-                display: flex;
-                gap: 10px;
-            `;
-            memoryControls.innerHTML = `
-                <button onclick="getConversationMemory()" style="
-                    background: rgba(255,255,255,0.2);
-                    color: white;
-                    border: 1px solid rgba(255,255,255,0.3);
-                    padding: 6px 12px;
-                    border-radius: 15px;
-                    font-size: 11px;
-                    cursor: pointer;
-                ">📊 Memory</button>
-                <button onclick="resetMemory()" style="
-                    background: rgba(255,255,255,0.2);
-                    color: white;
-                    border: 1px solid rgba(255,255,255,0.3);
-                    padding: 6px 12px;
-                    border-radius: 15px;
-                    font-size: 11px;
-                    cursor: pointer;
-                ">🔄 Reset</button>
-            `;
-            document.querySelector('.header').appendChild(memoryControls);
-            
             // Initialize expertise indicator
             updateExpertiseIndicator();
+            
+            // Initialize language (default: English)
+            switchLanguage('en');
         });
 
         // Enter key to send
