@@ -519,7 +519,7 @@ CHAT_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Item AI Agent - Yamama Cement</title>
+    <title>Yamama Warehouse AI Agent - Yamama Cement</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -955,8 +955,8 @@ CHAT_TEMPLATE = """
                 <button class="lang-btn" onclick="switchLanguage('ar')" id="arBtn">🇸🇦 AR</button>
             </div>
             <div class="header-content">
-                <h1 id="mainTitle">🤖 Master Item AI Agent</h1>
-                <p id="mainSubtitle">Your intelligent assistant for master item management and optimization</p>
+                <h1 id="mainTitle">🤖 Yamama Warehouse AI Agent</h1>
+                <p id="mainSubtitle">Your intelligent assistant for warehouse management and optimization</p>
             </div>
             <div class="control-buttons">
                 <button class="control-btn" onclick="getConversationMemory()" id="memoryBtn">🧠 Memory</button>
@@ -973,7 +973,7 @@ CHAT_TEMPLATE = """
             <div class="message bot">
                 <div class="message-content" id="welcomeMessage">
                     <div class="en-content">
-                        <strong>🏭 Welcome to Yamama Cement's Advanced Master Item AI Agent!</strong>
+                        <strong>🏭 Welcome to Yamama Cement's Advanced Warehouse AI Agent!</strong>
                         <br><br>
                         <strong>🤖 What I Can Do For You:</strong>
                         <br><br>
@@ -1193,25 +1193,25 @@ CHAT_TEMPLATE = """
         
         const translations = {
             en: {
-                mainTitle: "🤖 Master Item AI Agent",
-                mainSubtitle: "Your intelligent assistant for master item management and optimization",
+                mainTitle: "🤖 Yamama Warehouse AI Agent",
+                mainSubtitle: "Your intelligent assistant for warehouse management and optimization",
                 memoryBtn: "🧠 Memory",
                 restartBtn: "🔄 Restart Chat",
                 analysisBtn: "📊 Analysis",
                 uploadText: "Upload Files",
                 uploadSubtext: "Drag & drop or click to upload CSV, Excel, Word, PDF, Images (Max 50MB)",
-                inputPlaceholder: "Ask me about master items, inventory, or upload files for analysis...",
+                inputPlaceholder: "Ask me about warehouse operations, inventory, or upload files for analysis...",
                 sendBtn: "Send"
             },
             ar: {
-                mainTitle: "🤖 وكيل الذكاء الاصطناعي للبنود الرئيسية",
-                mainSubtitle: "مساعدك الذكي لإدارة وتحسين البنود الرئيسية",
+                mainTitle: "🤖 وكيل الذكاء الاصطناعي لمستودع يمامة",
+                mainSubtitle: "مساعدك الذكي لإدارة وتحسين المستودعات",
                 memoryBtn: "🧠 الذاكرة",
                 restartBtn: "🔄 إعادة تشغيل المحادثة",
                 analysisBtn: "📊 التحليل",
                 uploadText: "رفع الملفات",
                 uploadSubtext: "اسحب وأفلت أو انقر لرفع CSV, Excel, Word, PDF, الصور (حد أقصى 50 ميجابايت)",
-                inputPlaceholder: "اسألني عن البنود الرئيسية أو المخزون أو ارفع الملفات للتحليل...",
+                inputPlaceholder: "اسألني عن عمليات المستودع أو المخزون أو ارفع الملفات للتحليل...",
                 sendBtn: "إرسال"
             }
         };
@@ -1624,7 +1624,7 @@ def home():
 @app.route('/api')
 def api_status():
     return jsonify({
-        "message": "Master Item AI Agent is running!",
+        "message": "Yamama Warehouse AI Agent is running!",
         "status": "active",
         "version": "1.0.0",
         "endpoints": {
@@ -2041,9 +2041,9 @@ def generate_text_response(user_message):
     
     # Greetings with cement industry focus
     if any(word in user_lower for word in ['hello', 'hi', 'hey']):
-        return """🏭 **Welcome to Yamama Cement's Master Item AI Agent!**
+        return """🏭 **Welcome to Yamama Cement's Warehouse AI Agent!**
 
-I'm specialized in cement industry operations and can help you with:
+I'm specialized in warehouse management and cement industry operations and can help you with:
 
 📋 **Master Item Management:** Cement grade classification, SKU optimization
 📊 **Inventory Analysis:** Stock levels, ABC analysis, FIFO rotation  
@@ -2188,7 +2188,7 @@ I'm specialized in cement industry operations and can help you with:
     
     # Default comprehensive response
     else:
-        return """🤖 **Yamama Cement Master Item AI Agent**
+        return """🤖 **Yamama Cement Warehouse AI Agent**
 
 **I analyzed your query and can provide insights on:**
 
