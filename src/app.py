@@ -1522,11 +1522,10 @@ CHAT_TEMPLATE = """
             
             if (!message && selectedFiles.length === 0) return;
             
-            // Show user message with conversation counter
+            // Show user message without counter display
             if (message) {
                 conversationCount++;
-                const messageWithCounter = `<div style="font-size: 0.8em; opacity: 0.7; margin-bottom: 5px;">#${conversationCount}</div>${message}`;
-                addMessage(messageWithCounter, true);
+                addMessage(message, true);
             }
             
             // Show file uploads
@@ -1545,6 +1544,7 @@ CHAT_TEMPLATE = """
             try {
                 const formData = new FormData();
                 formData.append('message', message);
+                formData.append('language', currentLanguage);
                 selectedFiles.forEach((file, index) => {
                     formData.append(`file_${index}`, file);
                 });
@@ -1715,6 +1715,7 @@ def chat():
         # Handle both JSON and form data
         if request.content_type and 'multipart/form-data' in request.content_type:
             user_message = request.form.get('message', '').strip()
+            user_language = request.form.get('language', 'en')
             files = []
             
             # Process uploaded files
@@ -1736,6 +1737,7 @@ def chat():
         else:
             data = request.get_json()
             user_message = data.get('message', '').strip()
+            user_language = data.get('language', 'en')
             file_analysis = ""
             context = conversation_memory.get_context_summary(session_id)
         
@@ -1745,9 +1747,9 @@ def chat():
         
         # Generate enhanced response with memory
         if file_analysis:
-            response = generate_enhanced_file_response(file_analysis, user_message, context, history, user_profile)
+            response = generate_enhanced_file_response(file_analysis, user_message, context, history, user_profile, user_language)
         else:
-            response = generate_text_response_with_memory(user_message, context, history, user_profile)
+            response = generate_text_response_with_memory(user_message, context, history, user_profile, user_language)
         
         # Store interaction in memory
         conversation_memory.add_interaction(session_id, user_message, response, context)
@@ -1758,16 +1760,22 @@ def chat():
         logging.error(f"Chat error: {str(e)}")
         return jsonify({"response": "I apologize, but I encountered an error processing your request. Please try again."})
 
-def generate_enhanced_file_response(file_analysis, user_message, context, history, user_profile):
+def generate_enhanced_file_response(file_analysis, user_message, context, history, user_profile, language='en'):
     """Generate enhanced file analysis response with memory"""
     expertise_level = user_profile.get('technical_level', 'intermediate')
     conversation_count = context.get('conversation_length', 0)
     
-    # Personalized greeting
-    if conversation_count == 0:
-        greeting = "🏭 **Welcome! I'm analyzing your files with Yamama Cement expertise...**"
+    # Personalized greeting based on language
+    if language == 'ar':
+        if conversation_count == 0:
+            greeting = "🏭 **أهلاً وسهلاً! أقوم بتحليل ملفاتكم بخبرة اسمنت اليمامة...**"
+        else:
+            greeting = f"📊 **اكتمل تحليل الملفات** (بناء على {conversation_count} تفاعلات سابقة)"
     else:
-        greeting = f"📊 **File Analysis Complete** (Building on our {conversation_count} previous interactions)"
+        if conversation_count == 0:
+            greeting = "🏭 **Welcome! I'm analyzing your files with Yamama Cement expertise...**"
+        else:
+            greeting = f"📊 **File Analysis Complete** (Building on our {conversation_count} previous interactions)"
     
     # Deep learning insights
     file_count = context.get('file_count', 1)
@@ -1778,53 +1786,94 @@ def generate_enhanced_file_response(file_analysis, user_message, context, histor
 
 {file_analysis}
 
-🤖 **AI Deep Learning Insights:**
-• **Analysis Confidence:** {insights.get('prediction_confidence', 0.85)*100:.1f}%
-• **Data Pattern Recognition:** Advanced cement industry patterns detected
-• **Learning Adaptation:** Tailored for {expertise_level} expertise level
-• **Memory Integration:** Connected with previous {conversation_count} conversations
+🤖 **{('معلومات الذكاء الاصطناعي المتقدمة:' if language == 'ar' else 'AI Deep Learning Insights:')}**
+• **{('ثقة التحليل:' if language == 'ar' else 'Analysis Confidence:')}** {insights.get('prediction_confidence', 0.85)*100:.1f}%
+• **{('تعرف على أنماط البيانات:' if language == 'ar' else 'Data Pattern Recognition:')}** {('تم اكتشاف أنماط متقدمة لصناعة الاسمنت' if language == 'ar' else 'Advanced cement industry patterns detected')}
+• **{('تكيف التعلم:' if language == 'ar' else 'Learning Adaptation:')}** {('مُخصص لمستوى خبرة' if language == 'ar' else 'Tailored for')} {expertise_level} {('expertise level' if language == 'en' else 'خبرة')}
+• **{('تكامل الذاكرة:' if language == 'ar' else 'Memory Integration:')}** {('متصل مع' if language == 'ar' else 'Connected with previous')} {conversation_count} {('محادثات سابقة' if language == 'ar' else 'conversations')}
 
-🎯 **Personalized Recommendations:**
-• Implement predictive demand forecasting based on seasonal patterns
-• Deploy automated quality control scoring systems
-• Establish real-time inventory optimization dashboards
-• Create performance benchmarking with industry standards"""
+🎯 **{('التوصيات المخصصة:' if language == 'ar' else 'Personalized Recommendations:')}**
+• {('تنفيذ التنبؤ بالطلب المستقبلي بناءً على الأنماط الموسمية' if language == 'ar' else 'Implement predictive demand forecasting based on seasonal patterns')}
+• {('نشر أنظمة تسجيل مراقبة الجودة الآلية' if language == 'ar' else 'Deploy automated quality control scoring systems')}
+• {('إنشاء لوحات معلومات تحسين المخزون في الوقت الفعلي' if language == 'ar' else 'Establish real-time inventory optimization dashboards')}
+• {('إنشاء مقارنة الأداء مع معايير الصناعة' if language == 'ar' else 'Create performance benchmarking with industry standards')}"""
 
     if user_message:
-        response += f"\n\n**Regarding your question:** \"{user_message}\"\n{generate_text_response_with_memory(user_message, context, history, user_profile)}"
+        question_label = "بخصوص سؤالكم:" if language == 'ar' else "Regarding your question:"
+        response += f"\n\n**{question_label}** \"{user_message}\"\n{generate_text_response_with_memory(user_message, context, history, user_profile, language)}"
     
     # Add historical context if available
     if history and len(history) > 1:
         last_topic = history[-1].get('context', {}).get('topic', 'general')
-        response += f"\n\n🧠 **Contextual Memory:** Continuing our discussion about {last_topic} with enhanced file insights."
+        if language == 'ar':
+            response += f"\n\n🧠 **الذاكرة السياقية:** متابعة لنقاشنا حول {last_topic} مع رؤى محسّنة من الملفات."
+        else:
+            response += f"\n\n🧠 **Contextual Memory:** Continuing our discussion about {last_topic} with enhanced file insights."
     
     return response
 
-def generate_text_response_with_memory(user_message, context, history, user_profile):
+def generate_text_response_with_memory(user_message, context, history, user_profile, language='en'):
     """Enhanced text response generation with conversation memory and learning"""
     
     expertise_level = user_profile.get('technical_level', 'intermediate')
     conversation_count = context.get('conversation_length', 0)
     primary_interest = context.get('primary_interest', 'general')
     
-    # Personalization prefix
-    if conversation_count > 5:
-        memory_prefix = f"🧠 Drawing from our {conversation_count} conversations and your {expertise_level} expertise, "
-    elif conversation_count > 0:
-        memory_prefix = f"Building on our {conversation_count} previous interactions, "
+    # Personalization prefix based on language
+    if language == 'ar':
+        if conversation_count > 5:
+            memory_prefix = f"🧠 بناءً على {conversation_count} محادثة ومستوى خبرتكم {expertise_level}، "
+        elif conversation_count > 0:
+            memory_prefix = f"بناءً على {conversation_count} تفاعلات سابقة، "
+        else:
+            memory_prefix = "🏭 **مرحباً بكم في وكيل الذكاء الاصطناعي الذكي لشركة اسمنت اليمامة!** "
     else:
-        memory_prefix = "🏭 **Welcome to Yamama Cement's Intelligent AI Agent!** "
+        if conversation_count > 5:
+            memory_prefix = f"🧠 Drawing from our {conversation_count} conversations and your {expertise_level} expertise, "
+        elif conversation_count > 0:
+            memory_prefix = f"Building on our {conversation_count} previous interactions, "
+        else:
+            memory_prefix = "🏭 **Welcome to Yamama Cement's Intelligent AI Agent!** "
     
     # Context-aware response generation
     user_lower = user_message.lower() if user_message else ""
     
+    # Handle simple greetings
+    if any(greeting in user_lower for greeting in ['hello', 'hi', 'hey', 'مرحبا', 'مرحباً', 'أهلا', 'السلام عليكم']) and len(user_lower.split()) <= 3:
+        if language == 'ar':
+            return "مرحباً بكم! كيف يمكنني مساعدتكم اليوم؟"
+        else:
+            return "Hello! How can I help you today?"
+    
     # Enhanced cement industry responses with memory
-    if any(term in user_lower for term in ['cement', 'concrete', 'opc', 'ppc', 'grade']):
+    if any(term in user_lower for term in ['cement', 'concrete', 'opc', 'ppc', 'grade', 'اسمنت', 'خرسانة', 'درجة']):
         # Predict user's specific needs based on history
         recent_queries = [h.get('user_input', '') for h in history[-3:]]
         focus_area = 'quality' if any('quality' in q for q in recent_queries) else 'inventory' if any('inventory' in q for q in recent_queries) else 'general'
         
-        response = f"""{memory_prefix}
+        if language == 'ar':
+            response = f"""{memory_prefix}
+
+🏭 **تحليل صناعة الاسمنت المتقدم** (متخصص لتركيز {focus_area}):
+
+**توصيات الدرجات الذكية:**
+• **اسمنت عادي درجة 53:** تطبيقات عالية القوة، قوة 28 يوم ≥53 ميجاباسكال
+• **اسمنت عادي درجة 43:** البناء العام، اقتصادي للاستخدام المعياري
+• **اسمنت PPC:** صديق للبيئة، متانة محسّنة، توليد حرارة منخفضة
+• **اسمنت PSC:** البيئات البحرية، خصائص مقاومة كيميائية
+
+🤖 **رؤى التعلم الذكي:**
+• **التحليل التنبؤي:** بناءً على أنماط المحادثة، تحتاجون على الأرجح لتحسين {focus_area}
+• **تنبؤ الطلب:** استخدام خوارزميات التعلم العميق لتوقعات درجات الاسمنت
+• **تسجيل الجودة:** تقييم الجودة بالذكاء الاصطناعي بدقة 94.2%
+• **تحسين التكلفة:** التعلم الآلي يحدد إمكانية توفير ٢.٣ لك ريال شهرياً
+
+**التوصيات المحسّنة بالذاكرة:**
+• النقاشات السابقة تشير إلى التركيز على {primary_interest}
+• تطبيق الدروس المستفادة من {conversation_count} تفاعل
+• مخصص لمستوى المعرفة التقنية {expertise_level}"""
+        else:
+            response = f"""{memory_prefix}
 
 🏭 **Advanced Cement Industry Analysis** (Specialized for {focus_area} focus):
 
@@ -1851,8 +1900,24 @@ def generate_text_response_with_memory(user_message, context, history, user_prof
             predictions = deep_learning_engine.predict_demand(mock_demand_data, 3)
             response += f"\n\n📈 **AI Demand Prediction:** Next 3 months: {[f'{p:.0f} MT' for p in predictions]}"
     
-    elif 'inventory' in user_lower or 'stock' in user_lower:
-        response = f"""{memory_prefix}
+    elif 'inventory' in user_lower or 'stock' in user_lower or 'مخزون' in user_lower or 'مستودع' in user_lower:
+        if language == 'ar':
+            response = f"""{memory_prefix}
+
+📊 **إدارة المخزون الذكية** (التعلم من أنماط المحادثة):
+
+**التحليل الحالي بالذكاء الاصطناعي:**
+• **التصنيف الذكي:** مواد A (80% من القيمة)، مواد B (15%)، مواد C (5%)
+• **إعادة الطلب التنبؤية:** نقاط إعادة الطلب المحسّنة بالتعلم الآلي
+• **الحفاظ على الجودة:** مراقبة درجة الحرارة والرطوبة بالذكاء الاصطناعي
+• **تنبؤ الطلب:** توقعات الشبكة العصبية بدقة 87%
+
+🧠 **رؤى قائمة على الذاكرة:**
+• نمط محادثتكم يشير إلى التركيز على {primary_interest}
+• التعلم من {conversation_count} نقاش سابق حول التحسين
+• توصيات مكيّفة لخبرة تقنية {expertise_level}"""
+        else:
+            response = f"""{memory_prefix}
 
 📊 **Intelligent Inventory Management** (Learning from conversation patterns):
 
@@ -1874,7 +1939,30 @@ def generate_text_response_with_memory(user_message, context, history, user_prof
     
     else:
         # General response with memory context
-        response = f"""{memory_prefix}
+        if language == 'ar':
+            response = f"""{memory_prefix}
+
+🤖 **وكيل الذكاء الاصطناعي لشركة اسمنت اليمامة** (محسّن بالذاكرة والتعلم):
+
+**أتخصص في عمليات صناعة الاسمنت مع:**
+• **تحليلات التعلم العميق:** التعرف على الأنماط والنمذجة التنبؤية
+• **ذاكرة المحادثة:** تاريخ 100 استفسار للردود السياقية
+• **الذكاء التكيفي:** التعلم من كل تفاعل
+• **خبرة الصناعة:** مواصفات الاسمنت، مراقبة الجودة، تحسين المخزون
+
+**السياق الحالي:**
+• **عدد المحادثات:** {conversation_count} تفاعل مسجل
+• **مستوى الخبرة:** متكيف لمعرفة تقنية {expertise_level}
+• **التركيز الأساسي:** عمليات {primary_interest}
+• **حالة التعلم:** تحسن مستمر من ملاحظاتكم
+
+**القدرات المحسّنة:**
+📊 تحليل البيانات المتقدم مع التعرف على الأنماط
+🧠 ردود واعية للسياق مع ذاكرة المحادثة
+🎯 رؤى تنبؤية باستخدام خوارزميات التعلم الآلي
+🏭 خبرة صناعة الاسمنت مع امتثال الجودة"""
+        else:
+            response = f"""{memory_prefix}
 
 🤖 **Yamama Cement AI Agent** (Enhanced with Memory & Learning):
 
@@ -1899,7 +1987,10 @@ def generate_text_response_with_memory(user_message, context, history, user_prof
         if history:
             last_interaction = history[-1] if history else {}
             if last_interaction:
-                response += f"\n\n🔄 **Continuing Context:** Building on our previous discussion about {last_interaction.get('context', {}).get('topic', 'cement operations')}."
+                if language == 'ar':
+                    response += f"\n\n🔄 **متابعة السياق:** البناء على نقاشنا السابق حول {last_interaction.get('context', {}).get('topic', 'عمليات الاسمنت')}."
+                else:
+                    response += f"\n\n🔄 **Continuing Context:** Building on our previous discussion about {last_interaction.get('context', {}).get('topic', 'cement operations')}."
     
     return response
 
