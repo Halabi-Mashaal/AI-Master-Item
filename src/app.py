@@ -34,8 +34,12 @@ try:
     from fpdf import FPDF
     PDF_AVAILABLE = True
 except ImportError:
-    PDF_AVAILABLE = False
-    logging.warning("FPDF not available - PDF generation disabled")
+    try:
+        from fpdf2 import FPDF
+        PDF_AVAILABLE = True
+    except ImportError:
+        PDF_AVAILABLE = False
+        logging.warning("FPDF not available - PDF generation disabled")
 
 try:
     from docx import Document
