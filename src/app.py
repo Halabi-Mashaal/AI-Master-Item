@@ -987,42 +987,7 @@ I'm specialized in cement industry operations and can help you with:
 • Supply chain risk management
 
 **Upload your data files or ask specific questions about cement operations, inventory management, or quality control!**"""
-    
-    elif any(word in user_message for word in ['help', 'what can you do']):
-        return """🤖 **I can assist you with:**
-        
-🔹 **File Analysis:** Upload CSV, Excel, images, PDFs for instant analysis
-🔹 **Master Data Management:** Clean, standardize, and optimize item data
-🔹 **Duplicate Detection:** Find and merge duplicate items automatically  
-🔹 **Inventory Analytics:** Analyze stock levels, trends, and optimization
-🔹 **Quality Assessment:** Monitor and improve data quality metrics
-🔹 **Predictive Modeling:** Forecast demand and identify opportunities
-🔹 **Process Automation:** Streamline workflows and reduce manual work
 
-What would you like to explore?"""
-    
-    elif any(word in user_message for word in ['optimize', 'optimization']):
-        return """⚙️ **Optimization Recommendations:**
-        
-• **Storage Efficiency:** Reorganize warehouse layout (+12% space)
-• **Ordering Strategy:** Implement JIT for fast-moving items
-• **Vendor Consolidation:** Reduce suppliers from 45 to 32 (-15% costs)
-• **Automation:** Deploy barcode scanning for 67% faster processing"""
-    
-    elif any(word in user_message for word in ['thank', 'thanks']):
-        return "You're welcome! 😊 I'm here whenever you need assistance with your master item management. Feel free to upload files for analysis too!"
-    
-    else:
-        return f"""🤔 I understand you're asking about: "{user_message}"
-
-Let me analyze this for you... Based on current master item data, I recommend:
-
-• Reviewing related item categories for optimization opportunities
-• Checking data quality metrics for this area
-• Exploring predictive insights for better planning
-• Consider uploading relevant data files for deeper analysis
-
-Would you like me to dive deeper into any specific aspect?"""
 
 @app.route('/health')
 def health_check():
