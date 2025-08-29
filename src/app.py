@@ -1,48 +1,24 @@
 import os
-import asyncio
 import logging
-from flask import Flask, request, Response
-import spacy
-from spacy.cli import download
+from flask import Flask, jsonify
 
 app = Flask(__name__)
 
-logging.basicConfig(level=logging.DEBUG)
-
-# Ensure the model is available
-try:
-    nlp = spacy.load("en_core_web_sm")
-except OSError:
-    logging.warning("The 'en_core_web_sm' model is missing. Attempting to download it dynamically.")
-    download("en_core_web_sm")
-    nlp = spacy.load("en_core_web_sm")
+logging.basicConfig(level=logging.INFO)
 
 @app.route('/')
 def home():
-    return "Master Item AI Agent is running!"
+    logging.info("Home route accessed.")
+    return jsonify({
+        "message": "Master Item AI Agent is running!",
+        "status": "active"
+    })
 
-@app.route("/api/messages", methods=["POST"])
-def messages():
-    """
-    Endpoint for Microsoft Teams messages.
-    """
-    logging.debug(f"Received request: {request.data}")
-    if "application/json" in request.headers["Content-Type"]:
-        body = request.json
-    else:
-        return Response(status=415)
-
-    # Process message with spaCy
-    message = body.get("text", "")
-    doc = nlp(message)
-
-    # Extract entities and intent
-    entities = [(ent.text, ent.label_) for ent in doc.ents]
-    response_text = f"You said: {message}. Detected entities: {entities}"
-
-    logging.debug(f"Response: {response_text}")
-    return Response(response_text, status=200)
+@app.route('/health')
+def health_check():
+    return jsonify({"status": "healthy"})
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8000))
+    logging.info(f"Starting the app on host 0.0.0.0 and port {port}.")
     app.run(host="0.0.0.0", port=port, debug=False)
