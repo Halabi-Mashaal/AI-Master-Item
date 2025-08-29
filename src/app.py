@@ -7,8 +7,8 @@ import json
 import threading
 import time
 from collections import defaultdict, deque
-from flask import Flask, jsonify, request, render_template_string, session
-from datetime import datetime
+from flask import Flask, jsonify, request, render_template_string, session, send_file
+from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 import mimetypes
 import csv
@@ -28,6 +28,22 @@ try:
 except ImportError:
     NUMPY_AVAILABLE = False
     logging.warning("NumPy not available - using basic calculations")
+
+# Document generation libraries
+try:
+    from fpdf import FPDF
+    PDF_AVAILABLE = True
+except ImportError:
+    PDF_AVAILABLE = False
+    logging.warning("FPDF not available - PDF generation disabled")
+
+try:
+    from docx import Document
+    from docx.shared import Inches
+    DOCX_AVAILABLE = True
+except ImportError:
+    DOCX_AVAILABLE = False
+    logging.warning("python-docx not available - Word document generation disabled")
 
 # Memory and learning capabilities
 class ConversationMemory:
@@ -185,9 +201,292 @@ class DeepLearningEngine:
         
         return predictions
 
+class DocumentGenerator:
+    def __init__(self):
+        self.temp_dir = "temp_files"
+        self.ensure_temp_directory()
+    
+    def ensure_temp_directory(self):
+        """Create temporary directory for generated files"""
+        if not os.path.exists(self.temp_dir):
+            os.makedirs(self.temp_dir)
+    
+    def generate_analysis_excel(self, analysis_data, conversation_history, filename=None):
+        """Generate Excel file with analysis results"""
+        if filename is None:
+            filename = f"yamama_cement_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        
+        filepath = os.path.join(self.temp_dir, filename)
+        
+        try:
+            if PANDAS_AVAILABLE:
+                # Create Excel file with pandas
+                with pd.ExcelWriter(filepath, engine='openpyxl') as writer:
+                    # Summary sheet
+                    summary_data = {
+                        'Metric': ['Total Conversations', 'Average Sentiment', 'Engagement Score', 'Top Topic'],
+                        'Value': [
+                            len(conversation_history),
+                            analysis_data.get('sentiment_trend', {}).get('average_sentiment', 0),
+                            analysis_data.get('engagement_score', 0),
+                            analysis_data.get('common_topics', [('N/A', 0)])[0][0] if analysis_data.get('common_topics') else 'N/A'
+                        ]
+                    }
+                    pd.DataFrame(summary_data).to_excel(writer, sheet_name='Summary', index=False)
+                    
+                    # Topics sheet
+                    if analysis_data.get('common_topics'):
+                        topics_df = pd.DataFrame(analysis_data['common_topics'], columns=['Topic', 'Frequency'])
+                        topics_df.to_excel(writer, sheet_name='Topics', index=False)
+                    
+                    # Conversation history sheet
+                    conv_data = []
+                    for i, conv in enumerate(conversation_history[-20:]):  # Last 20 conversations
+                        conv_data.append({
+                            'Index': i+1,
+                            'User Message': conv.get('user_input', ''),
+                            'AI Response': conv.get('ai_response', '')[:200] + '...' if len(conv.get('ai_response', '')) > 200 else conv.get('ai_response', ''),
+                            'Timestamp': conv.get('timestamp', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+                        })
+                    
+                    if conv_data:
+                        pd.DataFrame(conv_data).to_excel(writer, sheet_name='Conversations', index=False)
+            else:
+                # Fallback: Create simple CSV-like structure
+                import csv
+                csv_filepath = filepath.replace('.xlsx', '.csv')
+                with open(csv_filepath, 'w', newline='', encoding='utf-8') as csvfile:
+                    writer = csv.writer(csvfile)
+                    writer.writerow(['Analysis Summary'])
+                    writer.writerow(['Total Conversations', len(conversation_history)])
+                    writer.writerow(['Engagement Score', analysis_data.get('engagement_score', 0)])
+                    writer.writerow([])
+                    
+                    if analysis_data.get('common_topics'):
+                        writer.writerow(['Topics', 'Frequency'])
+                        for topic, freq in analysis_data['common_topics']:
+                            writer.writerow([topic, freq])
+                
+                filepath = csv_filepath
+                
+            return filepath
+            
+        except Exception as e:
+            logging.error(f"Excel generation failed: {e}")
+            return None
+    
+    def generate_analysis_pdf(self, analysis_data, conversation_history, filename=None):
+        """Generate PDF file with analysis results"""
+        if filename is None:
+            filename = f"yamama_cement_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        
+        filepath = os.path.join(self.temp_dir, filename)
+        
+        try:
+            if PDF_AVAILABLE:
+                pdf = FPDF()
+                pdf.add_page()
+                pdf.set_font("Arial", size=16)
+                
+                # Title
+                pdf.cell(200, 10, txt="Yamama Cement AI Analysis Report", ln=1, align='C')
+                pdf.ln(10)
+                
+                # Summary section
+                pdf.set_font("Arial", size=14)
+                pdf.cell(200, 10, txt="Analysis Summary", ln=1)
+                pdf.set_font("Arial", size=12)
+                
+                summary_items = [
+                    f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                    f"Total Conversations: {len(conversation_history)}",
+                    f"Engagement Score: {analysis_data.get('engagement_score', 0)}%",
+                    f"Average Sentiment: {analysis_data.get('sentiment_trend', {}).get('average_sentiment', 0):.2f}"
+                ]
+                
+                for item in summary_items:
+                    pdf.cell(200, 8, txt=item, ln=1)
+                
+                pdf.ln(10)
+                
+                # Topics section
+                if analysis_data.get('common_topics'):
+                    pdf.set_font("Arial", size=14)
+                    pdf.cell(200, 10, txt="Most Discussed Topics", ln=1)
+                    pdf.set_font("Arial", size=12)
+                    
+                    for topic, freq in analysis_data['common_topics'][:5]:
+                        pdf.cell(200, 8, txt=f"• {topic.title()}: {freq} mentions", ln=1)
+                
+                pdf.ln(10)
+                
+                # Question types section
+                if analysis_data.get('question_types'):
+                    pdf.set_font("Arial", size=14)
+                    pdf.cell(200, 10, txt="Question Categories", ln=1)
+                    pdf.set_font("Arial", size=12)
+                    
+                    for q_type, count in analysis_data['question_types'].items():
+                        pdf.cell(200, 8, txt=f"• {q_type.title()}: {count} questions", ln=1)
+                
+                pdf.output(filepath)
+            else:
+                # Fallback: Create text file
+                txt_filepath = filepath.replace('.pdf', '.txt')
+                with open(txt_filepath, 'w', encoding='utf-8') as f:
+                    f.write("YAMAMA CEMENT AI ANALYSIS REPORT\n")
+                    f.write("=" * 50 + "\n\n")
+                    f.write(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                    f.write(f"Total Conversations: {len(conversation_history)}\n")
+                    f.write(f"Engagement Score: {analysis_data.get('engagement_score', 0)}%\n\n")
+                    
+                    if analysis_data.get('common_topics'):
+                        f.write("MOST DISCUSSED TOPICS:\n")
+                        f.write("-" * 25 + "\n")
+                        for topic, freq in analysis_data['common_topics']:
+                            f.write(f"• {topic.title()}: {freq} mentions\n")
+                        f.write("\n")
+                
+                filepath = txt_filepath
+                
+            return filepath
+            
+        except Exception as e:
+            logging.error(f"PDF generation failed: {e}")
+            return None
+    
+    def generate_analysis_word(self, analysis_data, conversation_history, filename=None):
+        """Generate Word document with analysis results"""
+        if filename is None:
+            filename = f"yamama_cement_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
+        
+        filepath = os.path.join(self.temp_dir, filename)
+        
+        try:
+            if DOCX_AVAILABLE:
+                doc = Document()
+                
+                # Title
+                title = doc.add_heading('Yamama Cement AI Analysis Report', 0)
+                
+                # Summary section
+                doc.add_heading('Analysis Summary', level=1)
+                summary_para = doc.add_paragraph()
+                summary_items = [
+                    f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                    f"Total Conversations Analyzed: {len(conversation_history)}",
+                    f"User Engagement Score: {analysis_data.get('engagement_score', 0)}%",
+                    f"Average Sentiment Score: {analysis_data.get('sentiment_trend', {}).get('average_sentiment', 0):.2f}"
+                ]
+                
+                for item in summary_items:
+                    summary_para.add_run(f"• {item}\n")
+                
+                # Topics section
+                if analysis_data.get('common_topics'):
+                    doc.add_heading('Most Discussed Topics', level=1)
+                    topics_para = doc.add_paragraph()
+                    
+                    for i, (topic, freq) in enumerate(analysis_data['common_topics'][:5], 1):
+                        topics_para.add_run(f"{i}. {topic.title()}: {freq} mentions\n")
+                
+                # Question types section
+                if analysis_data.get('question_types'):
+                    doc.add_heading('Question Categories', level=1)
+                    questions_para = doc.add_paragraph()
+                    
+                    for q_type, count in analysis_data['question_types'].items():
+                        questions_para.add_run(f"• {q_type.title()} Questions: {count}\n")
+                
+                # Insights section
+                doc.add_heading('Key Insights', level=1)
+                insights_para = doc.add_paragraph()
+                insights = self._generate_insights(analysis_data, conversation_history)
+                for insight in insights:
+                    insights_para.add_run(f"• {insight}\n")
+                
+                doc.save(filepath)
+            else:
+                # Fallback: Create rich text file
+                txt_filepath = filepath.replace('.docx', '_formatted.txt')
+                with open(txt_filepath, 'w', encoding='utf-8') as f:
+                    f.write("YAMAMA CEMENT AI ANALYSIS REPORT\n")
+                    f.write("=" * 50 + "\n\n")
+                    
+                    f.write("ANALYSIS SUMMARY\n")
+                    f.write("-" * 20 + "\n")
+                    f.write(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                    f.write(f"Total Conversations: {len(conversation_history)}\n")
+                    f.write(f"Engagement Score: {analysis_data.get('engagement_score', 0)}%\n\n")
+                    
+                    if analysis_data.get('common_topics'):
+                        f.write("MOST DISCUSSED TOPICS\n")
+                        f.write("-" * 25 + "\n")
+                        for i, (topic, freq) in enumerate(analysis_data['common_topics'], 1):
+                            f.write(f"{i}. {topic.title()}: {freq} mentions\n")
+                        f.write("\n")
+                
+                filepath = txt_filepath
+                
+            return filepath
+            
+        except Exception as e:
+            logging.error(f"Word document generation failed: {e}")
+            return None
+    
+    def _generate_insights(self, analysis_data, conversation_history):
+        """Generate key insights from analysis data"""
+        insights = []
+        
+        # Engagement insights
+        engagement = analysis_data.get('engagement_score', 0)
+        if engagement > 70:
+            insights.append("High user engagement indicates strong interest in cement-related topics")
+        elif engagement > 40:
+            insights.append("Moderate user engagement shows consistent interaction with the AI")
+        else:
+            insights.append("User engagement could be improved with more interactive features")
+        
+        # Topic insights
+        topics = analysis_data.get('common_topics', [])
+        if topics:
+            top_topic = topics[0][0]
+            insights.append(f"'{top_topic.title()}' is the most frequently discussed topic")
+        
+        # Sentiment insights
+        sentiment = analysis_data.get('sentiment_trend', {}).get('average_sentiment', 0)
+        if sentiment > 0.5:
+            insights.append("Overall positive sentiment indicates user satisfaction")
+        elif sentiment < -0.5:
+            insights.append("Negative sentiment suggests need for improved responses")
+        else:
+            insights.append("Neutral sentiment shows balanced user interactions")
+        
+        # Question type insights
+        q_types = analysis_data.get('question_types', {})
+        if q_types:
+            most_common_q = max(q_types, key=q_types.get)
+            insights.append(f"Users ask mostly {most_common_q} questions, suggesting focus area")
+        
+        return insights
+    
+    def cleanup_old_files(self, days_old=7):
+        """Clean up old generated files"""
+        try:
+            cutoff_time = datetime.now() - timedelta(days=days_old)
+            for filename in os.listdir(self.temp_dir):
+                filepath = os.path.join(self.temp_dir, filename)
+                if os.path.isfile(filepath):
+                    file_time = datetime.fromtimestamp(os.path.getctime(filepath))
+                    if file_time < cutoff_time:
+                        os.remove(filepath)
+        except Exception as e:
+            logging.error(f"File cleanup failed: {e}")
+
 # Global instances
 conversation_memory = ConversationMemory(max_history=100)
 deep_learning_engine = DeepLearningEngine()
+document_generator = DocumentGenerator()
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
@@ -336,6 +635,47 @@ CHAT_TEMPLATE = """
         }
         .restart-btn:hover {
             background: rgba(244, 67, 54, 0.3);
+        }
+        .analysis-btn {
+            background: rgba(33, 150, 243, 0.2);
+            border-color: rgba(33, 150, 243, 0.3);
+            position: relative;
+        }
+        .analysis-btn:hover {
+            background: rgba(33, 150, 243, 0.3);
+        }
+        .analysis-dropdown {
+            position: absolute;
+            top: 35px;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 160px;
+            z-index: 1000;
+        }
+        .dropdown-btn {
+            display: block;
+            width: 100%;
+            background: none;
+            border: none;
+            padding: 8px 12px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 12px;
+            color: #333;
+            border-radius: 0;
+            transition: background 0.2s ease;
+        }
+        .dropdown-btn:hover {
+            background: #f5f5f5;
+        }
+        .dropdown-btn:first-child {
+            border-radius: 8px 8px 0 0;
+        }
+        .dropdown-btn:last-child {
+            border-radius: 0 0 8px 8px;
         }
         
         /* RTL Support for Arabic */
@@ -621,6 +961,12 @@ CHAT_TEMPLATE = """
             <div class="control-buttons">
                 <button class="control-btn" onclick="getConversationMemory()" id="memoryBtn">🧠 Memory</button>
                 <button class="control-btn restart-btn" onclick="restartChat()" id="restartBtn">🔄 Restart Chat</button>
+                <button class="control-btn analysis-btn" onclick="toggleAnalysisMenu()" id="analysisBtn">📊 Analysis</button>
+                <div class="analysis-dropdown" id="analysisDropdown" style="display: none;">
+                    <button onclick="generateAnalysis('excel')" class="dropdown-btn">📈 Excel Report</button>
+                    <button onclick="generateAnalysis('pdf')" class="dropdown-btn">📄 PDF Report</button>
+                    <button onclick="generateAnalysis('word')" class="dropdown-btn">📝 Word Document</button>
+                </div>
             </div>
         </div>
         <div class="chat-container" id="chatContainer">
@@ -851,6 +1197,7 @@ CHAT_TEMPLATE = """
                 mainSubtitle: "Your intelligent assistant for master item management and optimization",
                 memoryBtn: "🧠 Memory",
                 restartBtn: "🔄 Restart Chat",
+                analysisBtn: "📊 Analysis",
                 uploadText: "Upload Files",
                 uploadSubtext: "Drag & drop or click to upload CSV, Excel, Word, PDF, Images (Max 50MB)",
                 inputPlaceholder: "Ask me about master items, inventory, or upload files for analysis...",
@@ -861,6 +1208,7 @@ CHAT_TEMPLATE = """
                 mainSubtitle: "مساعدك الذكي لإدارة وتحسين البنود الرئيسية",
                 memoryBtn: "🧠 الذاكرة",
                 restartBtn: "🔄 إعادة تشغيل المحادثة",
+                analysisBtn: "📊 التحليل",
                 uploadText: "رفع الملفات",
                 uploadSubtext: "اسحب وأفلت أو انقر لرفع CSV, Excel, Word, PDF, الصور (حد أقصى 50 ميجابايت)",
                 inputPlaceholder: "اسألني عن البنود الرئيسية أو المخزون أو ارفع الملفات للتحليل...",
@@ -908,6 +1256,7 @@ CHAT_TEMPLATE = """
             document.getElementById('mainSubtitle').textContent = t.mainSubtitle;
             document.getElementById('memoryBtn').innerHTML = t.memoryBtn;
             document.getElementById('restartBtn').innerHTML = t.restartBtn;
+            document.getElementById('analysisBtn').innerHTML = t.analysisBtn;
             
             // Update file upload area
             document.querySelector('.file-upload-text').textContent = t.uploadText;
@@ -1004,6 +1353,96 @@ CHAT_TEMPLATE = """
                 const errorMsg = currentLanguage === 'ar'
                     ? '🔧 خطأ في الذاكرة: لا يمكن استرداد ذاكرة المحادثة.'
                     : '🔧 Memory Error: Could not retrieve conversation memory.';
+                addMessage(errorMsg, false);
+            }
+        }
+
+        // Analysis functions
+        function toggleAnalysisMenu() {
+            const dropdown = document.getElementById('analysisDropdown');
+            const isVisible = dropdown.style.display !== 'none';
+            
+            // Close all other dropdowns first
+            document.querySelectorAll('.analysis-dropdown').forEach(d => {
+                if (d !== dropdown) d.style.display = 'none';
+            });
+            
+            dropdown.style.display = isVisible ? 'none' : 'block';
+            
+            // Close dropdown when clicking outside
+            if (!isVisible) {
+                setTimeout(() => {
+                    document.addEventListener('click', function closeDropdown(e) {
+                        if (!e.target.closest('.analysis-btn') && !e.target.closest('.analysis-dropdown')) {
+                            dropdown.style.display = 'none';
+                            document.removeEventListener('click', closeDropdown);
+                        }
+                    });
+                }, 10);
+            }
+        }
+
+        async function generateAnalysis(format) {
+            try {
+                // Close dropdown
+                document.getElementById('analysisDropdown').style.display = 'none';
+                
+                // Show loading message
+                const loadingMsg = currentLanguage === 'ar'
+                    ? `📊 جاري إنشاء تقرير التحليل بصيغة ${format.toUpperCase()}... يرجى الانتظار`
+                    : `📊 Generating ${format.toUpperCase()} analysis report... Please wait`;
+                addMessage(loadingMsg, false);
+                
+                const response = await fetch('/generate_analysis', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        format: format
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Create download link
+                    const downloadLink = data.download_url;
+                    const filename = data.filename;
+                    
+                    let successMsg;
+                    if (currentLanguage === 'ar') {
+                        successMsg = `✅ <strong>تم إنشاء التقرير بنجاح!</strong><br>
+                        📄 <strong>اسم الملف:</strong> ${filename}<br>
+                        📥 <a href="${downloadLink}" download="${filename}" style="color: #2E7D32; text-decoration: none; font-weight: bold;">انقر هنا لتحميل التقرير</a>`;
+                    } else {
+                        successMsg = `✅ <strong>Analysis report generated successfully!</strong><br>
+                        📄 <strong>File:</strong> ${filename}<br>
+                        📥 <a href="${downloadLink}" download="${filename}" style="color: #2E7D32; text-decoration: none; font-weight: bold;">Click here to download</a>`;
+                    }
+                    
+                    addMessage(successMsg, false);
+                    
+                    // Auto-trigger download
+                    const link = document.createElement('a');
+                    link.href = downloadLink;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                } else {
+                    const errorMsg = currentLanguage === 'ar'
+                        ? `❌ فشل في إنشاء التقرير: ${data.error}`
+                        : `❌ Failed to generate report: ${data.error}`;
+                    addMessage(errorMsg, false);
+                }
+                
+            } catch (error) {
+                console.error('Analysis generation error:', error);
+                const errorMsg = currentLanguage === 'ar'
+                    ? '❌ خطأ في إنشاء التقرير. يرجى المحاولة مرة أخرى.'
+                    : '❌ Error generating analysis report. Please try again.';
                 addMessage(errorMsg, false);
             }
         }
@@ -1838,6 +2277,185 @@ def health_check():
             "cement_expertise": "advanced"
         }
     })
+
+@app.route('/generate_analysis', methods=['POST'])
+def generate_analysis_document():
+    """Generate analysis document in specified format"""
+    try:
+        data = request.get_json()
+        file_format = data.get('format', 'excel').lower()
+        session_id = session.get('session_id', 'default')
+        
+        # Get conversation history and generate analysis
+        conversation_history = conversation_memory.get_conversation_history(session_id, limit=50)
+        
+        if not conversation_history:
+            return jsonify({
+                'success': False,
+                'error': 'No conversation history available for analysis'
+            }), 400
+        
+        # Perform deep learning analysis
+        analysis_data = deep_learning_engine.analyze_patterns([
+            conv.get('user_input', '') for conv in conversation_history
+        ])
+        
+        # Add conversation-based analysis
+        analysis_data.update({
+            'common_topics': _extract_conversation_topics(conversation_history),
+            'sentiment_trend': _analyze_conversation_sentiment(conversation_history),
+            'question_types': _classify_conversation_questions(conversation_history),
+            'engagement_score': _calculate_conversation_engagement(conversation_history)
+        })
+        
+        # Generate document based on format
+        filepath = None
+        if file_format == 'excel':
+            filepath = document_generator.generate_analysis_excel(analysis_data, conversation_history)
+        elif file_format == 'pdf':
+            filepath = document_generator.generate_analysis_pdf(analysis_data, conversation_history)
+        elif file_format == 'word':
+            filepath = document_generator.generate_analysis_word(analysis_data, conversation_history)
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Unsupported format. Use excel, pdf, or word'
+            }), 400
+        
+        if filepath and os.path.exists(filepath):
+            # Return download URL
+            filename = os.path.basename(filepath)
+            return jsonify({
+                'success': True,
+                'download_url': f'/download_analysis/{filename}',
+                'filename': filename,
+                'format': file_format
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to generate document'
+            }), 500
+            
+    except Exception as e:
+        logging.error(f"Analysis generation failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/download_analysis/<filename>')
+def download_analysis(filename):
+    """Download generated analysis file"""
+    try:
+        filepath = os.path.join(document_generator.temp_dir, secure_filename(filename))
+        
+        if not os.path.exists(filepath):
+            return jsonify({'error': 'File not found'}), 404
+        
+        # Determine mimetype
+        mimetype = 'application/octet-stream'
+        if filename.endswith('.xlsx'):
+            mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        elif filename.endswith('.pdf'):
+            mimetype = 'application/pdf'
+        elif filename.endswith('.docx'):
+            mimetype = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        elif filename.endswith('.csv'):
+            mimetype = 'text/csv'
+        elif filename.endswith('.txt'):
+            mimetype = 'text/plain'
+        
+        return send_file(
+            filepath,
+            as_attachment=True,
+            download_name=filename,
+            mimetype=mimetype
+        )
+        
+    except Exception as e:
+        logging.error(f"File download failed: {e}")
+        return jsonify({'error': str(e)}), 500
+
+def _extract_conversation_topics(conversations):
+    """Extract topics from conversation history"""
+    topic_counts = defaultdict(int)
+    cement_keywords = [
+        'cement', 'concrete', 'strength', 'quality', 'mix', 'aggregate', 
+        'portland', 'yamama', 'construction', 'building', 'grade', 'opc', 
+        'ppc', 'testing', 'properties', 'standard', 'specification'
+    ]
+    
+    for conv in conversations:
+        user_text = conv.get('user_input', '').lower()
+        for keyword in cement_keywords:
+            if keyword in user_text:
+                topic_counts[keyword] += 1
+    
+    return sorted(topic_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+
+def _analyze_conversation_sentiment(conversations):
+    """Analyze sentiment from conversations"""
+    positive_words = ['good', 'great', 'excellent', 'perfect', 'amazing', 'helpful', 'useful', 'clear']
+    negative_words = ['bad', 'poor', 'terrible', 'awful', 'useless', 'wrong', 'confusing', 'unclear']
+    
+    sentiment_scores = []
+    for conv in conversations:
+        text = conv.get('user_input', '').lower()
+        pos_score = sum(1 for word in positive_words if word in text)
+        neg_score = sum(1 for word in negative_words if word in text)
+        score = (pos_score - neg_score) / max(1, pos_score + neg_score)
+        sentiment_scores.append(score)
+    
+    return {
+        'average_sentiment': sum(sentiment_scores) / len(sentiment_scores) if sentiment_scores else 0,
+        'sentiment_trend': sentiment_scores[-10:],  # Last 10 interactions
+        'positive_interactions': sum(1 for score in sentiment_scores if score > 0),
+        'negative_interactions': sum(1 for score in sentiment_scores if score < 0)
+    }
+
+def _classify_conversation_questions(conversations):
+    """Classify question types from conversations"""
+    question_patterns = {
+        'technical': ['how', 'what', 'specification', 'property', 'strength', 'grade', 'composition'],
+        'pricing': ['cost', 'price', 'expensive', 'cheap', 'budget', 'affordable'],
+        'application': ['use', 'apply', 'project', 'construction', 'building', 'suitable'],
+        'comparison': ['vs', 'versus', 'compare', 'difference', 'better', 'best'],
+        'quality': ['quality', 'testing', 'standard', 'certification', 'compliance'],
+        'procurement': ['buy', 'purchase', 'order', 'supplier', 'availability']
+    }
+    
+    type_counts = defaultdict(int)
+    for conv in conversations:
+        text = conv.get('user_input', '').lower()
+        for q_type, patterns in question_patterns.items():
+            if any(pattern in text for pattern in patterns):
+                type_counts[q_type] += 1
+    
+    return dict(type_counts)
+
+def _calculate_conversation_engagement(conversations):
+    """Calculate engagement score from conversations"""
+    if not conversations:
+        return 0
+    
+    # Factors for engagement calculation
+    total_words = sum(len(conv.get('user_input', '').split()) for conv in conversations)
+    avg_words_per_message = total_words / len(conversations)
+    conversation_count = len(conversations)
+    
+    # Questions asked (engagement indicator)
+    question_count = sum(1 for conv in conversations if '?' in conv.get('user_input', ''))
+    question_ratio = question_count / len(conversations)
+    
+    # Calculate engagement score (0-100)
+    engagement = min(100, (
+        (avg_words_per_message * 2) +  # Word count factor
+        (conversation_count * 1.5) +   # Conversation frequency
+        (question_ratio * 20)          # Question engagement
+    ))
+    
+    return round(engagement, 2)
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8000))
