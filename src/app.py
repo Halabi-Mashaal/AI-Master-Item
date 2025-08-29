@@ -2109,20 +2109,15 @@ def generate_text_response(user_message):
     
     # Greetings with cement industry focus
     if any(word in user_lower for word in ['hello', 'hi', 'hey']):
-        return """🏭 **Welcome to Yamama Cement's Warehouse AI Agent!**
+        return """👋 **Hello! I'm your Yamama Warehouse AI Agent.**
 
-I'm specialized in warehouse management and cement industry operations and can help you with:
+How can I help you today? I can assist with:
+• Warehouse operations & inventory management
+• Cement industry analysis & quality control
+• Data file analysis (upload CSV, Excel, etc.)
+• Generating reports and insights
 
-📋 **Master Item Management:** Cement grade classification, SKU optimization
-📊 **Inventory Analysis:** Stock levels, ABC analysis, FIFO rotation  
-🔬 **Quality Control:** Strength testing, compliance monitoring
-💡 **Process Optimization:** Cost reduction, efficiency improvements
-
-**Upload your data files or ask me about:**
-• Cement specifications (OPC 43/53, PPC, PSC)
-• Inventory optimization strategies
-• Quality control best practices
-• Compliance and testing requirements"""
+What would you like to know?"""
     
     # Cement-specific responses
     elif any(term in user_lower for term in cement_terms):
