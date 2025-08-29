@@ -550,18 +550,25 @@ CHAT_TEMPLATE = """
         .header { 
             background: linear-gradient(135deg, #2E7D32 0%, #388E3C 50%, #1565C0 100%);
             color: white; 
-            padding: 20px 25px; 
+            padding: 15px 25px; 
             position: relative;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+        }
+        .header-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
         }
         .logo-container {
-            position: absolute;
-            top: 15px;
-            left: 25px;
             background: white;
             padding: 8px 12px;
             border-radius: 10px;
             box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            flex-shrink: 0;
         }
         .logo {
             font-weight: bold;
@@ -580,17 +587,22 @@ CHAT_TEMPLATE = """
         }
         .header-content {
             text-align: center;
-            margin-left: 140px;
+            flex-grow: 1;
+            margin: 0 20px;
         }
         .language-selector {
-            position: absolute;
-            top: 15px;
-            right: 25px;
             display: flex;
             background: rgba(255,255,255,0.2);
             border-radius: 20px;
             padding: 5px;
             gap: 5px;
+            flex-shrink: 0;
+        }
+        .control-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 5px;
         }
         .lang-btn {
             background: transparent;
@@ -612,13 +624,6 @@ CHAT_TEMPLATE = """
         }
         .lang-btn.active:hover {
             background: white;
-        }
-        .control-buttons {
-            position: absolute;
-            bottom: 15px;
-            right: 25px;
-            display: flex;
-            gap: 10px;
         }
         .control-btn {
             background: rgba(255,255,255,0.2);
@@ -687,12 +692,69 @@ CHAT_TEMPLATE = """
             direction: rtl;
             text-align: right;
         }
-        .rtl .logo-container {
-            left: auto;
-            right: 25px;
+        .rtl .header-top-row {
+            flex-direction: row-reverse;
         }
-        .rtl .language-selector {
-            right: auto;
+        .rtl .header-content {
+            text-align: center;
+        }
+        
+        /* Responsive Design for Mobile */
+        @media (max-width: 768px) {
+            .header {
+                padding: 10px 15px;
+                min-height: auto;
+            }
+            .header-top-row {
+                flex-direction: column;
+                gap: 10px;
+                margin-bottom: 10px;
+            }
+            .header-content {
+                margin: 0;
+                order: 2;
+            }
+            .logo-container {
+                order: 1;
+                align-self: center;
+            }
+            .language-selector {
+                order: 3;
+                align-self: center;
+            }
+            .control-buttons {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 8px;
+            }
+            .control-btn {
+                font-size: 10px;
+                padding: 5px 10px;
+            }
+            .analysis-dropdown {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                right: auto;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header-content h1 {
+                font-size: 18px;
+            }
+            .header-content p {
+                font-size: 12px;
+            }
+            .control-buttons {
+                gap: 5px;
+            }
+            .control-btn {
+                font-size: 9px;
+                padding: 4px 8px;
+            }
+        }
             left: 25px;
         }
         .rtl .control-buttons {
@@ -948,19 +1010,21 @@ CHAT_TEMPLATE = """
 <body>
     <div class="container" id="mainContainer">
         <div class="header">
-            <div class="logo-container">
-                <div class="logo">
-                    <div class="arabic">اسمنت اليمامة</div>
-                    <div class="english">YAMAMA CEMENT</div>
+            <div class="header-top-row">
+                <div class="logo-container">
+                    <div class="logo">
+                        <div class="arabic">اسمنت اليمامة</div>
+                        <div class="english">YAMAMA CEMENT</div>
+                    </div>
                 </div>
-            </div>
-            <div class="language-selector">
-                <button class="lang-btn active" onclick="switchLanguage('en')" id="enBtn">🇺🇸 EN</button>
-                <button class="lang-btn" onclick="switchLanguage('ar')" id="arBtn">🇸🇦 AR</button>
-            </div>
-            <div class="header-content">
-                <h1 id="mainTitle">🤖 Yamama Warehouse AI Agent</h1>
-                <p id="mainSubtitle">Your intelligent assistant for warehouse management and optimization</p>
+                <div class="header-content">
+                    <h1 id="mainTitle">🤖 Yamama Warehouse AI Agent</h1>
+                    <p id="mainSubtitle">Your intelligent assistant for warehouse management and optimization</p>
+                </div>
+                <div class="language-selector">
+                    <button class="lang-btn active" onclick="switchLanguage('en')" id="enBtn">🇺🇸 EN</button>
+                    <button class="lang-btn" onclick="switchLanguage('ar')" id="arBtn">🇸🇦 AR</button>
+                </div>
             </div>
             <div class="control-buttons">
                 <button class="control-btn" onclick="getConversationMemory()" id="memoryBtn">🧠 Memory</button>
