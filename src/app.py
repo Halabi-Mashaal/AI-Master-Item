@@ -29,7 +29,7 @@ except ImportError:
     NUMPY_AVAILABLE = False
     logging.warning("NumPy not available - using basic calculations")
 
-# Document generation libraries
+# Document generation libraries - all optional
 try:
     from fpdf import FPDF
     PDF_AVAILABLE = True
@@ -39,7 +39,7 @@ except ImportError:
         PDF_AVAILABLE = True
     except ImportError:
         PDF_AVAILABLE = False
-        logging.warning("FPDF not available - PDF generation disabled")
+        logging.warning("FPDF not available - PDF generation will create TXT files instead")
 
 try:
     from docx import Document
@@ -47,7 +47,7 @@ try:
     DOCX_AVAILABLE = True
 except ImportError:
     DOCX_AVAILABLE = False
-    logging.warning("python-docx not available - Word document generation disabled")
+    logging.warning("python-docx not available - Word generation will create TXT files instead")
 
 # Memory and learning capabilities
 class ConversationMemory:
