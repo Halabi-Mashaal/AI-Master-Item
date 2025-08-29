@@ -42,111 +42,179 @@ CHAT_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Item AI Agent</title>
+    <title>Master Item AI Agent - Yamama Cement</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 25%, #0D47A1 75%, #1565C0 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 20px;
         }
         .container { 
             background: white; 
             border-radius: 20px; 
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
             width: 90%;
-            max-width: 800px;
-            height: 80vh;
+            max-width: 900px;
+            height: 85vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            position: relative;
         }
         .header { 
-            background: linear-gradient(45deg, #4a90e2, #357abd);
+            background: linear-gradient(135deg, #2E7D32 0%, #388E3C 50%, #1565C0 100%);
             color: white; 
-            padding: 20px; 
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px 25px; 
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        .header h1 { font-size: 24px; margin-bottom: 5px; }
-        .header p { opacity: 0.9; font-size: 14px; }
+        .logo-container {
+            position: absolute;
+            top: 15px;
+            left: 25px;
+            background: white;
+            padding: 8px 12px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        .logo {
+            font-weight: bold;
+            font-size: 14px;
+            color: #2E7D32;
+            line-height: 1.2;
+        }
+        .logo .arabic {
+            font-size: 16px;
+            color: #2E7D32;
+        }
+        .logo .english {
+            font-size: 12px;
+            color: #1565C0;
+            margin-top: 2px;
+        }
+        .header-content {
+            text-align: center;
+            margin-left: 140px;
+        }
+        .header h1 { 
+            font-size: 28px; 
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .header p { 
+            opacity: 0.95; 
+            font-size: 16px;
+            font-weight: 300;
+        }
         .chat-container { 
             flex: 1; 
-            padding: 20px; 
+            padding: 25px; 
             overflow-y: auto; 
-            background: #f8f9fa;
+            background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);
         }
         .message { 
-            margin-bottom: 15px; 
+            margin-bottom: 18px; 
             display: flex;
             align-items: flex-start;
         }
         .message.user { justify-content: flex-end; }
         .message-content { 
-            max-width: 70%; 
-            padding: 12px 18px; 
-            border-radius: 18px; 
+            max-width: 75%; 
+            padding: 15px 20px; 
+            border-radius: 20px; 
             word-wrap: break-word;
+            line-height: 1.5;
         }
         .message.user .message-content { 
-            background: linear-gradient(45deg, #4a90e2, #357abd);
+            background: linear-gradient(135deg, #2E7D32 0%, #388E3C 100%);
             color: white; 
-            border-bottom-right-radius: 4px;
+            border-bottom-right-radius: 6px;
+            box-shadow: 0 3px 10px rgba(46, 125, 50, 0.3);
         }
         .message.bot .message-content { 
             background: white; 
-            border: 1px solid #e1e8ed;
-            color: #333;
-            border-bottom-left-radius: 4px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border: 1px solid #e8f5e8;
+            color: #2c3e50;
+            border-bottom-left-radius: 6px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+            border-left: 4px solid #2E7D32;
         }
         .input-container { 
-            padding: 20px; 
-            background: white;
-            border-top: 1px solid #e1e8ed;
+            padding: 25px; 
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border-top: 2px solid #e8f5e8;
             display: flex; 
             flex-direction: column;
-            gap: 10px;
+            gap: 15px;
         }
         .message-row {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             align-items: flex-end;
         }
         .file-upload-area {
-            border: 2px dashed #e1e8ed;
+            border: 2px dashed #2E7D32;
             border-radius: 15px;
-            padding: 20px;
+            padding: 25px;
             text-align: center;
-            background: #f8f9fa;
+            background: linear-gradient(135deg, #e8f5e8 0%, #f1f8e9 100%);
             cursor: pointer;
             transition: all 0.3s ease;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
         .file-upload-area:hover {
-            border-color: #4a90e2;
-            background: #f0f7ff;
+            border-color: #1565C0;
+            background: linear-gradient(135deg, #e3f2fd 0%, #f0f7ff 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 125, 50, 0.2);
         }
         .file-upload-area.dragover {
-            border-color: #4a90e2;
-            background: #e3f2fd;
+            border-color: #1565C0;
+            background: linear-gradient(135deg, #e3f2fd 0%, #f0f7ff 100%);
             transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(21, 101, 192, 0.3);
+        }
+        .file-upload-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #2E7D32, #1565C0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .file-upload-text {
+            font-weight: 600;
+            font-size: 18px;
+            color: #2E7D32;
+            margin-bottom: 5px;
+        }
+        .file-upload-subtitle {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.4;
         }
         .file-info {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 10px;
+            gap: 12px;
+            padding: 12px 15px;
             background: white;
-            border: 1px solid #e1e8ed;
-            border-radius: 10px;
+            border: 2px solid #e8f5e8;
+            border-radius: 12px;
             margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+        .file-info:hover {
+            border-color: #2E7D32;
+            box-shadow: 0 3px 10px rgba(46, 125, 50, 0.1);
         }
         .file-info .file-icon {
-            font-size: 24px;
+            font-size: 28px;
         }
         .file-info .file-details {
             flex: 1;
@@ -154,49 +222,54 @@ CHAT_TEMPLATE = """
         }
         .file-info .file-name {
             font-weight: 600;
-            color: #333;
+            color: #2c3e50;
+            margin-bottom: 2px;
         }
         .file-info .file-size {
             font-size: 12px;
-            color: #666;
+            color: #7f8c8d;
         }
         .remove-file {
             color: #e74c3c;
             cursor: pointer;
             font-weight: bold;
-            padding: 5px;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
         }
         .remove-file:hover {
             background: #fee;
-            border-radius: 3px;
+            transform: scale(1.1);
         }
         .input-container input { 
             flex: 1; 
-            padding: 12px 18px; 
-            border: 2px solid #e1e8ed; 
-            border-radius: 25px; 
+            padding: 15px 22px; 
+            border: 2px solid #e8f5e8; 
+            border-radius: 30px; 
             font-size: 16px;
             outline: none;
             transition: all 0.3s ease;
+            background: white;
         }
         .input-container input:focus { 
-            border-color: #4a90e2; 
-            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+            border-color: #2E7D32; 
+            box-shadow: 0 0 0 4px rgba(46, 125, 50, 0.1);
         }
         .input-container button { 
-            padding: 12px 20px; 
-            background: linear-gradient(45deg, #4a90e2, #357abd);
+            padding: 15px 25px; 
+            background: linear-gradient(135deg, #2E7D32 0%, #388E3C 50%, #1565C0 100%);
             color: white; 
             border: none; 
-            border-radius: 25px; 
+            border-radius: 30px; 
             cursor: pointer;
             font-size: 16px;
             font-weight: 600;
             transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(46, 125, 50, 0.3);
         }
         .input-container button:hover { 
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(74, 144, 226, 0.4);
+            box-shadow: 0 6px 20px rgba(46, 125, 50, 0.4);
         }
         .input-container button:disabled {
             opacity: 0.6;
@@ -205,54 +278,86 @@ CHAT_TEMPLATE = """
         }
         .typing-indicator {
             display: none;
-            padding: 10px 18px;
+            padding: 12px 20px;
             background: white;
-            border: 1px solid #e1e8ed;
-            border-radius: 18px;
-            margin-bottom: 15px;
-            max-width: 70%;
+            border: 1px solid #e8f5e8;
+            border-radius: 20px;
+            margin-bottom: 18px;
+            max-width: 75%;
+            border-left: 4px solid #2E7D32;
         }
         .typing-indicator.show { display: block; }
         .typing-dots {
             display: inline-block;
             position: relative;
-            width: 40px;
-            height: 10px;
+            width: 50px;
+            height: 12px;
         }
         .typing-dots div {
             position: absolute;
             top: 0;
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            background: #4a90e2;
+            background: linear-gradient(135deg, #2E7D32, #1565C0);
             animation: typing 1.4s infinite ease-in-out both;
         }
         .typing-dots div:nth-child(1) { left: 0; animation-delay: -0.32s; }
-        .typing-dots div:nth-child(2) { left: 16px; animation-delay: -0.16s; }
-        .typing-dots div:nth-child(3) { left: 32px; }
+        .typing-dots div:nth-child(2) { left: 20px; animation-delay: -0.16s; }
+        .typing-dots div:nth-child(3) { left: 40px; }
         @keyframes typing {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
+            0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .container { 
+                width: 95%; 
+                height: 90vh; 
+                margin: 10px;
+            }
+            .header-content {
+                margin-left: 0;
+                margin-top: 60px;
+            }
+            .logo-container {
+                position: static;
+                margin-bottom: 15px;
+                display: inline-block;
+            }
+            .header h1 { font-size: 24px; }
+            .header p { font-size: 14px; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🤖 Master Item AI Agent</h1>
-            <p>Your intelligent assistant for master item management and optimization</p>
+            <div class="logo-container">
+                <div class="logo">
+                    <div class="arabic">اسمنت اليمامة</div>
+                    <div class="english">YAMAMA CEMENT</div>
+                </div>
+            </div>
+            <div class="header-content">
+                <h1>🤖 Master Item AI Agent</h1>
+                <p>Your intelligent assistant for master item management and optimization</p>
+            </div>
         </div>
         <div class="chat-container" id="chatContainer">
             <div class="message bot">
                 <div class="message-content">
-                    👋 Hello! I'm your Master Item AI Agent. I can help you with:
+                    👋 <strong>Welcome to Yamama Cement's Master Item AI Agent!</strong>
                     <br><br>
-                    • 📋 Master item management
-                    • 🔍 Inventory analysis
-                    • 📊 Data quality insights
-                    • 🎯 Predictive recommendations
-                    • ⚙️ Process optimization
+                    I'm here to help you with:
+                    <br><br>
+                    • 📋 <strong>Master item management</strong> - Clean and organize your data
+                    • 🔍 <strong>Inventory analysis</strong> - Track and optimize stock levels
+                    • 📊 <strong>Data quality insights</strong> - Improve data accuracy and completeness
+                    • 🎯 <strong>Predictive recommendations</strong> - Forecast demand and trends
+                    • ⚙️ <strong>Process optimization</strong> - Streamline your workflows
+                    • 📁 <strong>File analysis</strong> - Upload and analyze CSV, Excel, images, and documents
                     <br><br>
                     How can I assist you today?
                 </div>
@@ -267,16 +372,17 @@ CHAT_TEMPLATE = """
         </div>
         <div class="input-container">
             <div class="file-upload-area" onclick="document.getElementById('fileInput').click()" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);" ondragleave="dragLeaveHandler(event);">
-                <div>📁 <strong>Upload Files</strong></div>
-                <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                <div class="file-upload-icon">📁</div>
+                <div class="file-upload-text">Upload Files</div>
+                <div class="file-upload-subtitle">
                     Drag & drop or click to upload CSV, Excel, Word, PDF, Images (Max 50MB)
                 </div>
                 <input type="file" id="fileInput" multiple accept=".csv,.xlsx,.xls,.txt,.json,.pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.bmp,.tiff" style="display: none;" onchange="handleFileSelect(event)">
             </div>
             <div id="fileList"></div>
             <div class="message-row">
-                <input type="text" id="messageInput" placeholder="Ask me anything about master items or upload files for analysis..." autofocus style="flex: 1; padding: 12px 18px; border: 2px solid #e1e8ed; border-radius: 25px; font-size: 16px; outline: none; transition: all 0.3s ease;">
-                <button onclick="sendMessage()" id="sendButton" style="padding: 12px 20px; background: linear-gradient(45deg, #4a90e2, #357abd); color: white; border: none; border-radius: 25px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.3s ease;">Send</button>
+                <input type="text" id="messageInput" placeholder="Ask me about master items, inventory, or upload files for analysis..." autofocus>
+                <button onclick="sendMessage()" id="sendButton">Send</button>
             </div>
         </div>
     </div>
