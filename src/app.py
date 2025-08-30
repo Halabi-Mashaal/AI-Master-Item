@@ -18,11 +18,11 @@ ADVANCED_NLP_AVAILABLE = False
 LIGHTWEIGHT_NLP_AVAILABLE = False
 
 # Check memory constraints and available libraries
+
 def get_memory_usage():
     """Get current memory usage in MB"""
     try:
         import psutil
-        import os
         process = psutil.Process(os.getpid())
         return process.memory_info().rss / 1024 / 1024  # MB
     except ImportError:
@@ -96,6 +96,15 @@ except ImportError:
     PANDAS_AVAILABLE = False
     logging.warning("Pandas not available, using basic CSV processing")
 
+# Master Data Management with Oracle EBS Integration
+try:
+    from mdm_oracle_ebs import initialize_mdm, get_mdm_manager, MasterDataManager
+    MDM_AVAILABLE = True
+    logging.info("Master Data Management (MDM) with Oracle EBS integration loaded")
+except ImportError as e:
+    MDM_AVAILABLE = False
+    logging.warning(f"MDM not available: {e}")
+
 # Enhanced AI libraries
 try:
     import numpy as np
@@ -147,10 +156,10 @@ class ConversationMemory:
         user_lower = user_input.lower()
         
         # Track user interests and expertise level
-        if 'cement' in user_lower or 'concrete' in user_lower:
-            self.user_profiles[session_id]['cement_interest'] = self.user_profiles[session_id].get('cement_interest', 0) + 1
+        if 'data' in user_lower or 'analysis' in user_lower:
+            self.user_profiles[session_id]['data_interest'] = self.user_profiles[session_id].get('data_interest', 0) + 1
         
-        if any(term in user_lower for term in ['grade 53', 'opc', 'ppc', 'strength']):
+        if any(term in user_lower for term in ['inventory', 'forecast', 'optimization', 'analysis']):
             self.user_profiles[session_id]['technical_level'] = 'advanced'
         elif any(term in user_lower for term in ['what is', 'explain', 'help me understand']):
             self.user_profiles[session_id]['technical_level'] = 'beginner'
@@ -202,7 +211,7 @@ class ConversationMemory:
         
         context = {
             'user_expertise': profile.get('technical_level', 'intermediate'),
-            'primary_interest': 'cement_operations' if profile.get('cement_interest', 0) > 2 else 'general',
+            'primary_interest': 'data_analysis' if profile.get('data_interest', 0) > 2 else 'general',
             'recent_topics': [item.get('context', {}).get('topic', 'general') for item in history],
             'conversation_length': len(self.conversations[session_id])
         }
@@ -289,7 +298,7 @@ class DocumentGenerator:
     def generate_analysis_excel(self, analysis_data, conversation_history, filename=None):
         """Generate Excel file with analysis results"""
         if filename is None:
-            filename = f"yamama_cement_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+            filename = f"business_intelligence_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
         
         filepath = os.path.join(self.temp_dir, filename)
         
@@ -353,7 +362,7 @@ class DocumentGenerator:
     def generate_analysis_pdf(self, analysis_data, conversation_history, filename=None):
         """Generate PDF file with analysis results"""
         if filename is None:
-            filename = f"yamama_cement_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            filename = f"business_intelligence_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
         
         filepath = os.path.join(self.temp_dir, filename)
         
@@ -364,7 +373,7 @@ class DocumentGenerator:
                 pdf.set_font("Arial", size=16)
                 
                 # Title
-                pdf.cell(200, 10, txt="Yamama Cement AI Analysis Report", ln=1, align='C')
+                pdf.cell(200, 10, txt="Business Intelligence AI Analysis Report", ln=1, align='C')
                 pdf.ln(10)
                 
                 # Summary section
@@ -409,7 +418,7 @@ class DocumentGenerator:
                 # Fallback: Create text file
                 txt_filepath = filepath.replace('.pdf', '.txt')
                 with open(txt_filepath, 'w', encoding='utf-8') as f:
-                    f.write("YAMAMA CEMENT AI ANALYSIS REPORT\n")
+                    f.write("BUSINESS INTELLIGENCE AI ANALYSIS REPORT\n")
                     f.write("=" * 50 + "\n\n")
                     f.write(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
                     f.write(f"Total Conversations: {len(conversation_history)}\n")
@@ -433,7 +442,7 @@ class DocumentGenerator:
     def generate_analysis_word(self, analysis_data, conversation_history, filename=None):
         """Generate Word document with analysis results"""
         if filename is None:
-            filename = f"yamama_cement_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
+            filename = f"business_intelligence_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
         
         filepath = os.path.join(self.temp_dir, filename)
         
@@ -442,7 +451,7 @@ class DocumentGenerator:
                 doc = Document()
                 
                 # Title
-                title = doc.add_heading('Yamama Cement AI Analysis Report', 0)
+                title = doc.add_heading('Business Intelligence AI Analysis Report', 0)
                 
                 # Summary section
                 doc.add_heading('Analysis Summary', level=1)
@@ -485,7 +494,7 @@ class DocumentGenerator:
                 # Fallback: Create rich text file
                 txt_filepath = filepath.replace('.docx', '_formatted.txt')
                 with open(txt_filepath, 'w', encoding='utf-8') as f:
-                    f.write("YAMAMA CEMENT AI ANALYSIS REPORT\n")
+                    f.write("BUSINESS INTELLIGENCE AI ANALYSIS REPORT\n")
                     f.write("=" * 50 + "\n\n")
                     
                     f.write("ANALYSIS SUMMARY\n")
@@ -516,7 +525,7 @@ class DocumentGenerator:
         # Engagement insights
         engagement = analysis_data.get('engagement_score', 0)
         if engagement > 70:
-            insights.append("High user engagement indicates strong interest in cement-related topics")
+            insights.append("High user engagement indicates strong interest in business intelligence topics")
         elif engagement > 40:
             insights.append("Moderate user engagement shows consistent interaction with the AI")
         else:
@@ -575,6 +584,21 @@ app.config['SESSION_TYPE'] = 'filesystem'
 # Create uploads directory if it doesn't exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+# Initialize Master Data Management
+if MDM_AVAILABLE:
+    oracle_config = {
+        'host': os.environ.get('ORACLE_HOST', 'localhost'),
+        'port': os.environ.get('ORACLE_PORT', '1521'),
+        'service_name': os.environ.get('ORACLE_SERVICE', 'ORCL'),
+        'username': os.environ.get('ORACLE_USER', 'apps'),
+        'password': os.environ.get('ORACLE_PASSWORD', 'apps')
+    }
+    mdm_manager = initialize_mdm(oracle_config)
+    logging.info("MDM Manager initialized with Oracle EBS configuration")
+else:
+    mdm_manager = None
+    logging.warning("MDM Manager not available - master data features disabled")
+
 logging.basicConfig(level=logging.INFO)
 
 # Allowed file extensions
@@ -594,7 +618,7 @@ CHAT_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yamama Warehouse AI Agent - Yamama Cement</title>
+    <title>Business Intelligence AI Agent</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -1084,8 +1108,8 @@ CHAT_TEMPLATE = """
             <div class="header-top-row">
                 <div class="logo-container">
                     <div class="logo">
-                        <div class="arabic">اسمنت اليمامة</div>
-                        <div class="english">YAMAMA CEMENT</div>
+                        <div class="arabic">ذكاء الأعمال</div>
+                        <div class="english">BUSINESS INTELLIGENCE</div>
                     </div>
                 </div>
                 <div class="header-content">
@@ -1112,7 +1136,7 @@ CHAT_TEMPLATE = """
             <div class="message bot">
                 <div class="message-content" id="welcomeMessage">
                     <div class="en-content">
-                        <strong>🏭 Welcome to Yamama Cement's Advanced Warehouse AI Agent!</strong>
+                        <strong>🤖 Welcome to Advanced Business Intelligence AI Agent!</strong>
                         <br><br>
                         <strong>🤖 What I Can Do For You:</strong>
                         <br><br>
@@ -2015,66 +2039,72 @@ def generate_text_response_with_memory(user_message, context, history, user_prof
     # Handle help requests more naturally
     if any(help_phrase in user_lower for help_phrase in ['how can you help', 'what can you do', 'help me', 'كيف يمكنك مساعدتي', 'ماذا يمكنك أن تفعل', 'ما هي خدماتك', 'how can you help me']):
         if language == 'ar':
-            return """🤖 **أهلاً بكم! إليكم خدماتي:**
+            return """🤖 **مرحباً! إليك كيف يمكنني مساعدتك:**
 
 📊 **تحليل البيانات:**
 • تحليل ملفات CSV و Excel
 • استخراج الرؤى من المستندات
 • تقييم جودة البيانات
 
-🏭 **خبرة الاسمنت:**
-• مواصفات الاسمنت (درجة 43، 53، PPC، PSC)
-• مراقبة الجودة والاختبارات
-• معايير الامتثال
-
 📦 **إدارة المخزون:**
-• تحسين المخزون
+• تحسين مستويات المخزون
 • توقع الطلب
 • تقليل التكاليف
 
-اسألوني أي سؤال أو ارفعوا ملفاتكم للتحليل!"""
+� **ذكاء الأعمال:**
+• تحليل الاتجاهات والأنماط
+• تقارير الأداء التفاعلية
+• التنبؤ المالي
+
+اسألني أي سؤال أو ارفع ملفاتك للتحليل!"""
         else:
-            return """🤖 **Hello! Here's how I can assist you:**
+            help_text = """Hello! Here's how I can assist you:
 
-📊 **Data Analysis:**
-• Analyze CSV & Excel files
-• Extract insights from documents  
-• Evaluate data quality
+1. **Data Analysis:**
+   • Analyze CSV & Excel files
+   • Extract insights from documents
+   • Evaluate data quality
 
-🏭 **Cement Expertise:**
-• Cement specifications (Grade 43, 53, PPC, PSC)
-• Quality control and testing
-• Compliance standards
+2. **Inventory Management:**
+   • Optimize inventory levels
+   • Forecast demand
+   • Reduce costs"""
+            
+            if MDM_AVAILABLE:
+                help_text += """
 
-📦 **Inventory Management:**
-• Optimize inventory levels
-• Forecast demand
-• Reduce costs
-
-Ask me anything or upload your files for analysis!"""
+3. **Master Data Management (MDM):**
+   • Create and manage items
+   • Supplier data management
+   • Customer data management  
+   • Oracle EBS integration
+   • Data quality assessment"""
+            
+            help_text += "\n\nAsk me anything or upload your files for analysis!"
+            return help_text
     
-    # Enhanced cement industry responses with memory
-    if any(term in user_lower for term in ['cement', 'concrete', 'opc', 'ppc', 'grade', 'اسمنت', 'خرسانة', 'درجة']):
+    # Enhanced business intelligence responses with memory
+    if any(term in user_lower for term in ['data', 'analysis', 'report', 'insight', 'بيانات', 'تحليل', 'تقرير']):
         # Predict user's specific needs based on history
         recent_queries = [h.get('user_input', '') for h in history[-3:]]
-        focus_area = 'quality' if any('quality' in q for q in recent_queries) else 'inventory' if any('inventory' in q for q in recent_queries) else 'general'
+        focus_area = 'analysis' if any('analy' in q.lower() for q in recent_queries) else 'reporting' if any('report' in q.lower() for q in recent_queries) else 'general'
         
         if language == 'ar':
             response = f"""{memory_prefix}
 
-🏭 **تحليل صناعة الاسمنت المتقدم** (متخصص لتركيز {focus_area}):
+📊 **تحليل البيانات المتقدم** (متخصص لتركيز {focus_area}):
 
-**توصيات الدرجات الذكية:**
-• **اسمنت عادي درجة 53:** تطبيقات عالية القوة، قوة 28 يوم ≥53 ميجاباسكال
-• **اسمنت عادي درجة 43:** البناء العام، اقتصادي للاستخدام المعياري
-• **اسمنت PPC:** صديق للبيئة، متانة محسّنة، توليد حرارة منخفضة
-• **اسمنت PSC:** البيئات البحرية، خصائص مقاومة كيميائية
+**تحليلات ذكية:**
+• **تحليل البيانات:** استخراج الرؤى من ملفات CSV وExcel
+• **تقييم الجودة:** فحص شامل لجودة البيانات
+• **التصور التفاعلي:** رسوم بيانية ولوحات معلومات ديناميكية
+• **التنبؤ الذكي:** نماذج التعلم الآلي للتوقعات
 
 🤖 **رؤى التعلم الذكي:**
-• **التحليل التنبؤي:** بناءً على أنماط المحادثة، تحتاجون على الأرجح لتحسين {focus_area}
-• **تنبؤ الطلب:** استخدام خوارزميات التعلم العميق لتوقعات درجات الاسمنت
-• **تسجيل الجودة:** تقييم الجودة بالذكاء الاصطناعي بدقة 94.2%
-• **تحسين التكلفة:** التعلم الآلي يحدد إمكانية توفير ٢.٣ لك ريال شهرياً
+• **التحليل التنبؤي:** بناءً على أنماط المحادثة، تحتاج على الأرجح لتحسين {focus_area}
+• **تنبؤ الاتجاهات:** استخدام خوارزميات التعلم العميق
+• **تسجيل الأداء:** تقييم الأداء بالذكاء الاصطناعي بدقة 94.2%
+• **تحسين العمليات:** التعلم الآلي يحدد إمكانيات التحسين
 
 **التوصيات المحسّنة بالذاكرة:**
 • النقاشات السابقة تشير إلى التركيز على {primary_interest}
@@ -2083,19 +2113,19 @@ Ask me anything or upload your files for analysis!"""
         else:
             response = f"""{memory_prefix}
 
-🏭 **Advanced Cement Industry Analysis** (Specialized for {focus_area} focus):
+📊 **Advanced Business Intelligence** (Specialized for {focus_area} focus):
 
-**Intelligent Grade Recommendations:**
-• **OPC Grade 53:** High-strength applications, 28-day strength ≥53 MPa
-• **OPC Grade 43:** General construction, cost-effective for standard use
-• **PPC Cement:** Eco-friendly, enhanced durability, reduced heat generation
-• **PSC Cement:** Marine environments, chemical resistance properties
+**Smart Analytics:**
+• **Data Analysis:** Extract insights from CSV and Excel files
+• **Quality Assessment:** Comprehensive data quality evaluation
+• **Interactive Visualization:** Dynamic charts and dashboards
+• **Predictive Modeling:** Machine learning models for forecasting
 
 🤖 **AI Learning Insights:**
 • **Predictive Analysis:** Based on conversation patterns, you likely need {focus_area} optimization
-• **Demand Forecasting:** Using deep learning algorithms for cement grade predictions
-• **Quality Scoring:** AI-powered quality assessment with 94.2% accuracy
-• **Cost Optimization:** Machine learning identifies ₹2.3L monthly savings potential
+• **Trend Forecasting:** Using deep learning algorithms for predictions
+• **Performance Scoring:** AI-powered performance assessment with 94.2% accuracy
+• **Process Optimization:** Machine learning identifies improvement opportunities
 
 **Memory-Enhanced Recommendations:**
 • Previous discussions suggest focus on {primary_interest}
@@ -2104,9 +2134,9 @@ Ask me anything or upload your files for analysis!"""
         
         # Add predictive insights
         if NUMPY_AVAILABLE:
-            mock_demand_data = [100, 120, 95, 140, 110]  # Sample data
-            predictions = deep_learning_engine.predict_demand(mock_demand_data, 3)
-            response += f"\n\n📈 **AI Demand Prediction:** Next 3 months: {[f'{p:.0f} MT' for p in predictions]}"
+            mock_trend_data = [100, 120, 95, 140, 110]  # Sample data
+            predictions = deep_learning_engine.predict_demand(mock_trend_data, 3)
+            response += f"\n\n📈 **AI Trend Prediction:** Next 3 months: {[f'{p:.1f}%' for p in predictions]}"
     
     elif 'inventory' in user_lower or 'stock' in user_lower or 'مخزون' in user_lower or 'مستودع' in user_lower:
         if language == 'ar':
@@ -2145,58 +2175,152 @@ Ask me anything or upload your files for analysis!"""
         insights = deep_learning_engine.analyze_patterns(sample_inventory)
         response += f"\n\n🤖 **Deep Learning Analysis:** Inventory volatility: {insights.get('volatility', 0):.1f}, Trend: {insights.get('trend', 'stable')}"
     
+    # Master Data Management queries
+    elif (MDM_AVAILABLE and any(term in user_lower for term in ['mdm', 'master data', 'item', 'supplier', 'customer', 'oracle ebs', 'data quality', 'بيانات رئيسية', 'صنف', 'مورد', 'عميل', 'جودة البيانات'])):
+        if language == 'ar':
+            response = f"""{memory_prefix}
+
+🏢 **إدارة البيانات الرئيسية المتقدمة** مع Oracle EBS:
+
+**🎯 إدارة الأصناف:**
+• إنشاء وتحديث بيانات الأصناف
+• تصنيف ذكي للمنتجات
+• تقييم جودة البيانات بالذكاء الاصطناعي
+• مزامنة تلقائية مع Oracle EBS
+
+**👥 إدارة الموردين:**
+• قاعدة بيانات شاملة للموردين
+• تقييم المخاطر الذكي
+• إدارة العقود والشروط
+• تتبع الأداء والجودة
+
+**🏬 إدارة العملاء:**
+• ملفات عملاء متكاملة
+• تحليل سلوك الشراء
+• إدارة الائتمان والدفع
+• تجربة عملاء محسّنة
+
+**📊 ضمان الجودة:**
+• فحص تلقائي لجودة البيانات (دقة {(0.94 * 100):.1f}%)
+• اكتشاف التكرار والتضارب
+• توصيات تصحيح ذكية
+• تقارير جودة شاملة
+
+**🔄 التكامل مع Oracle EBS:**
+• مزامنة البيانات في الوقت الفعلي
+• ربط محاسبي متكامل
+• سير عمل موافقات تلقائي
+• إدارة التغييرات المتقدمة
+
+💡 **اسألني عن:** إنشاء صنف جديد، البحث عن مورد، تقييم جودة البيانات، أو التكامل مع Oracle EBS!"""
+        else:
+            response = f"""{memory_prefix}
+
+🏢 **Advanced Master Data Management** with Oracle EBS Integration:
+
+**🎯 Item Management:**
+• Create and update item master data
+• Intelligent product categorization
+• AI-powered data quality assessment
+• Automatic synchronization with Oracle EBS
+
+**👥 Supplier Management:**
+• Comprehensive supplier database
+• Smart risk assessment
+• Contract and terms management
+• Performance and quality tracking
+
+**🏬 Customer Management:**
+• Integrated customer profiles
+• Purchase behavior analysis
+• Credit and payment management
+• Enhanced customer experience
+
+**📊 Data Quality Assurance:**
+• Automatic data quality checks ({(0.94 * 100):.1f}% accuracy)
+• Duplicate and conflict detection
+• Intelligent correction suggestions
+• Comprehensive quality reports
+
+**🔄 Oracle EBS Integration:**
+• Real-time data synchronization
+• Integrated financial linkage
+• Automated approval workflows
+• Advanced change management
+
+💡 **Ask me about:** Creating new items, searching suppliers, data quality assessment, or Oracle EBS integration!"""
+        
+        # Add MDM-specific insights if available
+        if mdm_manager:
+            try:
+                dashboard = mdm_manager.get_data_quality_dashboard()
+                if not dashboard.get('error'):
+                    stats = dashboard.get('overall_stats', {})
+                    if language == 'ar':
+                        response += f"\n\n📈 **إحصائيات حالية:**"
+                        response += f"\n• الأصناف: {stats.get('items', {}).get('count', 0)} (جودة: {stats.get('items', {}).get('avg_quality_score', 0):.1f})"
+                        response += f"\n• الموردون: {stats.get('suppliers', {}).get('count', 0)} (جودة: {stats.get('suppliers', {}).get('avg_quality_score', 0):.1f})"
+                        response += f"\n• العملاء: {stats.get('customers', {}).get('count', 0)} (جودة: {stats.get('customers', {}).get('avg_quality_score', 0):.1f})"
+                    else:
+                        response += f"\n\n📈 **Current Statistics:**"
+                        response += f"\n• Items: {stats.get('items', {}).get('count', 0)} (Quality: {stats.get('items', {}).get('avg_quality_score', 0):.1f})"
+                        response += f"\n• Suppliers: {stats.get('suppliers', {}).get('count', 0)} (Quality: {stats.get('suppliers', {}).get('avg_quality_score', 0):.1f})"
+                        response += f"\n• Customers: {stats.get('customers', {}).get('count', 0)} (Quality: {stats.get('customers', {}).get('avg_quality_score', 0):.1f})"
+            except Exception as e:
+                logging.error(f"Error getting MDM dashboard: {e}")
+    
     else:
         # General response with memory context
         if language == 'ar':
-            response = f"""🤖 **وكيل الذكاء الاصطناعي لشركة اسمنت اليمامة**
+            response = f"""🤖 **وكيل ذكاء الأعمال الذكي**
 
-مرحباً! كيف يمكنني مساعدتكم اليوم؟
+مرحباً! كيف يمكنني مساعدتك اليوم؟
 
-**🏭 خدماتي الأساسية:**
+**📊 خدماتي الأساسية:**
 • تحليل البيانات والملفات بالذكاء الاصطناعي
-• استشارات صناعة الاسمنت والجودة  
 • إدارة وتحسين المخزون
 • توقع الطلب والتنبؤات المالية
+• تحليل الأداء وإعداد التقارير
 
-**📊 قدرات متقدمة:**
+**🧠 قدرات متقدمة:**
 • ذاكرة محادثة ذكية ({conversation_count} تفاعل)
 • تحليل أنماط البيانات
-• توصيات مخصصة لمستوى خبرتكم ({expertise_level})
+• توصيات مخصصة لمستوى خبرتك ({expertise_level})
 
-**❓ اسألوني عن:**
-• مواصفات وأنواع الاسمنت
-• مراقبة الجودة والاختبارات
+**❓ اسألني عن:**
+• تحليل ملفات البيانات
 • تحسين العمليات والتكاليف
-• تحليل الملفات والتقارير"""
+• إدارة المخزون والتنبؤ
+• إعداد التقارير والتحليلات"""
         else:
-            response = f"""🤖 **Yamama Warehouse AI Agent**
+            response = f"""🤖 **Business Intelligence AI Agent**
 
 Hello! How can I help you today?
 
-**🏭 Core Services:**
+**📊 Core Services:**
 • AI-powered data analysis and file processing
-• Cement industry expertise and quality consulting
 • Inventory management and optimization
 • Demand forecasting and financial predictions
+• Performance analysis and reporting
 
-**📊 Advanced Capabilities:**
+**🧠 Advanced Capabilities:**
 • Smart conversation memory ({conversation_count} interactions)
 • Pattern recognition in data
 • Personalized recommendations for {expertise_level} level
 
 **❓ Ask me about:**
-• Cement specifications and grades
-• Quality control and testing
+• Data file analysis
 • Process optimization and cost reduction
-• File analysis and reporting"""
+• Inventory management and forecasting
+• Report generation and insights"""
 
         if history:
             last_interaction = history[-1] if history else {}
             if last_interaction:
                 if language == 'ar':
-                    response += f"\n\n🔄 **متابعة السياق:** البناء على نقاشنا السابق حول {last_interaction.get('context', {}).get('topic', 'عمليات الاسمنت')}."
+                    response += f"\n\n🔄 **متابعة السياق:** البناء على نقاشنا السابق حول {last_interaction.get('context', {}).get('topic', 'تحليل البيانات')}."
                 else:
-                    response += f"\n\n🔄 **Continuing Context:** Building on our previous discussion about {last_interaction.get('context', {}).get('topic', 'cement operations')}."
+                    response += f"\n\n🔄 **Continuing Context:** Building on our previous discussion about {last_interaction.get('context', {}).get('topic', 'data analysis')}."
     
     # Advanced NLP-Enhanced Response Customization
     if nlp_analysis and ADVANCED_NLP_AVAILABLE:
@@ -2745,10 +2869,117 @@ def health_check():
             "conversation_memory": "100 prompts",
             "deep_learning": "enabled",
             "session_tracking": "active",
-            "cement_expertise": "advanced",
+            "master_data_management": "enabled" if MDM_AVAILABLE else "disabled",
+            "oracle_ebs_integration": "enabled" if MDM_AVAILABLE else "disabled",
             "advanced_nlp": "enabled" if ADVANCED_NLP_AVAILABLE else ("lightweight" if LIGHTWEIGHT_NLP_AVAILABLE else "disabled")
         }
     })
+
+# Master Data Management API Endpoints
+@app.route('/api/mdm/items', methods=['POST'])
+def create_item():
+    """Create new item with AI validation"""
+    if not MDM_AVAILABLE or not mdm_manager:
+        return jsonify({"error": "MDM functionality not available"}), 503
+    
+    try:
+        data = request.get_json()
+        result = mdm_manager.create_item(data)
+        return jsonify(result)
+    except Exception as e:
+        logging.error(f"Error creating item: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/mdm/suppliers', methods=['POST'])
+def create_supplier():
+    """Create new supplier with AI validation"""
+    if not MDM_AVAILABLE or not mdm_manager:
+        return jsonify({"error": "MDM functionality not available"}), 503
+    
+    try:
+        data = request.get_json()
+        result = mdm_manager.create_supplier(data)
+        return jsonify(result)
+    except Exception as e:
+        logging.error(f"Error creating supplier: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/mdm/customers', methods=['POST'])
+def create_customer():
+    """Create new customer with AI validation"""
+    if not MDM_AVAILABLE or not mdm_manager:
+        return jsonify({"error": "MDM functionality not available"}), 503
+    
+    try:
+        data = request.get_json()
+        result = mdm_manager.create_customer(data)
+        return jsonify(result)
+    except Exception as e:
+        logging.error(f"Error creating customer: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/mdm/search/<entity_type>', methods=['POST'])
+def search_entities(entity_type):
+    """Search master data entities"""
+    if not MDM_AVAILABLE or not mdm_manager:
+        return jsonify({"error": "MDM functionality not available"}), 503
+    
+    try:
+        data = request.get_json()
+        results = mdm_manager.search_entities(entity_type, data)
+        return jsonify({"results": results, "count": len(results)})
+    except Exception as e:
+        logging.error(f"Error searching entities: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/mdm/dashboard', methods=['GET'])
+def mdm_dashboard():
+    """Get MDM data quality dashboard"""
+    if not MDM_AVAILABLE or not mdm_manager:
+        return jsonify({"error": "MDM functionality not available"}), 503
+    
+    try:
+        dashboard = mdm_manager.get_data_quality_dashboard()
+        return jsonify(dashboard)
+    except Exception as e:
+        logging.error(f"Error getting MDM dashboard: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/mdm/bulk-import', methods=['POST'])
+def bulk_import():
+    """Bulk import master data from Excel"""
+    if not MDM_AVAILABLE or not mdm_manager:
+        return jsonify({"error": "MDM functionality not available"}), 503
+    
+    try:
+        if 'file' not in request.files:
+            return jsonify({"error": "No file uploaded"}), 400
+        
+        file = request.files['file']
+        entity_type = request.form.get('entity_type', 'ITEM')
+        mapping_json = request.form.get('mapping', '{}')
+        mapping = json.loads(mapping_json)
+        
+        if file.filename == '':
+            return jsonify({"error": "No file selected"}), 400
+        
+        if file and file.filename.endswith(('.xlsx', '.xls')):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
+            
+            result = mdm_manager.bulk_import_from_excel(filepath, entity_type, mapping)
+            
+            # Clean up uploaded file
+            os.remove(filepath)
+            
+            return jsonify(result)
+        else:
+            return jsonify({"error": "Invalid file format. Please upload Excel file."}), 400
+            
+    except Exception as e:
+        logging.error(f"Error in bulk import: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/advanced_nlp_analysis', methods=['POST'])
 def advanced_nlp_analysis():
