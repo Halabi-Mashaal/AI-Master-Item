@@ -1155,6 +1155,8 @@ CHAT_TEMPLATE = """
 
     <script>
         let selectedFiles = [];
+        let conversationCount = 0;
+        let userExpertiseLevel = 'intermediate';
         
         function getFileIcon(filename) {
             const ext = filename.split('.').pop().toLowerCase();
