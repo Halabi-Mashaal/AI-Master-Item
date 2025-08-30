@@ -51,12 +51,8 @@ try:
     from fpdf import FPDF
     PDF_AVAILABLE = True
 except ImportError:
-    try:
-        from fpdf2 import FPDF
-        PDF_AVAILABLE = True
-    except ImportError:
-        PDF_AVAILABLE = False
-        logging.warning("FPDF not available - PDF generation will create TXT files instead")
+    PDF_AVAILABLE = False
+    logging.warning("Neither FPDF nor FPDF2 available - PDF generation will create TXT files instead")
 
 try:
     from docx import Document

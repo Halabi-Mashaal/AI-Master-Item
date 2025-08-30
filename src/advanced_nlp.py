@@ -86,7 +86,7 @@ try:
     gensim_available = True
 except ImportError:
     gensim_available = False
-    logging.warning("Gensim not available - topic modeling disabled")
+    logging.warning("Gensim not available - advanced topic modeling disabled, using scikit-learn fallback")
 
 import numpy as np
 import pandas as pd
