@@ -13,22 +13,80 @@ from werkzeug.utils import secure_filename
 import mimetypes
 import csv
 
-# Advanced NLP Integration
-try:
-    import sys
-    import os
-    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-    from advanced_nlp import (
-        nlp_processor, 
-        process_user_query, 
-        analyze_conversation_history,
-        extract_warehouse_intelligence
-    )
-    ADVANCED_NLP_AVAILABLE = True
-    logging.info("Advanced NLP capabilities loaded successfully")
-except ImportError as e:
-    ADVANCED_NLP_AVAILABLE = False
-    logging.warning(f"Advanced NLP not available: {e}. Using basic processing.")
+# NLP Integration with Memory Optimization
+ADVANCED_NLP_AVAILABLE = False
+LIGHTWEIGHT_NLP_AVAILABLE = False
+
+# Check memory constraints and available libraries
+def get_memory_usage():
+    """Get current memory usage in MB"""
+    try:
+        import psutil
+        import os
+        process = psutil.Process(os.getpid())
+        return process.memory_info().rss / 1024 / 1024  # MB
+    except ImportError:
+        # Fallback: check environment variables for memory constraints
+        if os.environ.get('RENDER') or os.environ.get('RAILWAY') or os.environ.get('HEROKU'):
+            return 400  # Assume constrained environment
+        return 100  # Assume local development
+    except:
+        return 100
+
+# Determine which NLP system to use based on memory and environment
+MEMORY_LIMIT = 300  # MB - conservative limit for cloud deployment
+current_memory = get_memory_usage()
+
+if current_memory < MEMORY_LIMIT and not os.environ.get('USE_LIGHTWEIGHT_NLP'):
+    try:
+        import sys
+        import os
+        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+        from advanced_nlp import (
+            nlp_processor, 
+            process_user_query, 
+            analyze_conversation_history,
+            extract_warehouse_intelligence
+        )
+        ADVANCED_NLP_AVAILABLE = True
+        logging.info("Advanced NLP capabilities loaded successfully")
+    except (ImportError, MemoryError) as e:
+        logging.warning(f"Advanced NLP not available: {e}. Falling back to lightweight NLP.")
+        ADVANCED_NLP_AVAILABLE = False
+
+# Fallback to lightweight NLP
+if not ADVANCED_NLP_AVAILABLE:
+    try:
+        from lightweight_nlp import (
+            process_nlp_analysis,
+            get_nlp_capabilities
+        )
+        LIGHTWEIGHT_NLP_AVAILABLE = True
+        logging.info("Lightweight NLP capabilities loaded successfully")
+    except ImportError as e:
+        LIGHTWEIGHT_NLP_AVAILABLE = False
+        logging.warning(f"Lightweight NLP not available: {e}")
+
+# Final fallback - import mock functions for compatibility
+if not ADVANCED_NLP_AVAILABLE:
+    try:
+        from advanced_nlp_fallback import (
+            nlp_processor,
+            process_user_query,
+            analyze_conversation_history,
+            extract_warehouse_intelligence
+        )
+        logging.info("Advanced NLP fallback functions loaded for compatibility")
+    except ImportError as e:
+        logging.error(f"Critical error: Cannot load NLP fallback: {e}")
+        # Define minimal inline fallbacks
+        def process_user_query(text, language='en'):
+            return {'intent': {'intent': 'general', 'confidence': 0.3}}
+        def analyze_conversation_history(history):
+            return {'processing_mode': 'minimal'}
+        def extract_warehouse_intelligence(texts):
+            return {'processing_mode': 'minimal'}
+        nlp_processor = None
 
 # Try to import pandas, fallback to csv if not available
 try:
@@ -1746,12 +1804,49 @@ def chat():
             file_analysis = ""
             context = conversation_memory.get_context_summary(session_id)
         
-        # Advanced NLP Processing
+        # Advanced NLP Processing with fallback
         nlp_analysis = {}
-        if ADVANCED_NLP_AVAILABLE and user_message:
+        if user_message:
             try:
-                nlp_analysis = process_user_query(user_message, user_language)
-                logging.info(f"NLP Analysis completed for session {session_id}")
+                if ADVANCED_NLP_AVAILABLE:
+                    nlp_analysis = process_user_query(user_message, user_language)
+                    logging.info(f"Advanced NLP Analysis completed for session {session_id}")
+                elif LIGHTWEIGHT_NLP_AVAILABLE:
+                    # Use lightweight NLP processing
+                    conversation_hist = [{'text': msg['user_input']} for msg in history]
+                    nlp_analysis = process_nlp_analysis(user_message, conversation_hist)
+                    logging.info(f"Lightweight NLP Analysis completed for session {session_id}")
+                    
+                    # Convert lightweight format to expected format
+                    if nlp_analysis.get('status') == 'success':
+                        nlp_analysis = {
+                            'intent': {
+                                'intent': nlp_analysis.get('intent', {}).get('primary_intent', 'general'),
+                                'confidence': nlp_analysis.get('intent', {}).get('confidence', 0.5)
+                            },
+                            'entities': nlp_analysis.get('entities', {}),
+                            'sentiment': {
+                                'classification': nlp_analysis.get('sentiment', {}).get('sentiment', 'neutral'),
+                                'confidence': nlp_analysis.get('sentiment', {}).get('confidence', 0.5)
+                            },
+                            'language': {
+                                'detected': {
+                                    'language': nlp_analysis.get('language', 'en'),
+                                    'confidence': 0.8
+                                }
+                            },
+                            'confidence_score': nlp_analysis.get('sentiment', {}).get('confidence', 0.5)
+                        }
+                else:
+                    # Basic fallback processing
+                    nlp_analysis = {
+                        'intent': {'intent': 'general', 'confidence': 0.3},
+                        'entities': {},
+                        'sentiment': {'classification': 'neutral', 'confidence': 0.5},
+                        'language': {'detected': {'language': user_language, 'confidence': 0.5}},
+                        'confidence_score': 0.3
+                    }
+                    logging.info(f"Basic NLP fallback used for session {session_id}")
                 
                 # Extract key insights for context
                 if nlp_analysis:
@@ -1768,8 +1863,15 @@ def chat():
                         logging.info(f"Language auto-detected as: {user_language}")
                         
             except Exception as e:
-                logging.error(f"Advanced NLP processing error: {e}")
-                # Continue with basic processing if NLP fails
+                logging.error(f"NLP processing error: {e}")
+                # Fallback to basic processing
+                nlp_analysis = {
+                    'intent': {'intent': 'general', 'confidence': 0.3},
+                    'entities': {},
+                    'sentiment': {'classification': 'neutral', 'confidence': 0.5},
+                    'language': {'detected': {'language': user_language, 'confidence': 0.5}},
+                    'confidence_score': 0.3
+                }
         
         # Get conversation history and user profile
         history = conversation_memory.get_conversation_history(session_id, 5)
@@ -1786,13 +1888,16 @@ def chat():
         
         # Add NLP insights to response if available
         response_data = {"response": response}
-        if nlp_analysis and ADVANCED_NLP_AVAILABLE:
+        if nlp_analysis and (ADVANCED_NLP_AVAILABLE or LIGHTWEIGHT_NLP_AVAILABLE):
+            nlp_mode = "advanced" if ADVANCED_NLP_AVAILABLE else "lightweight"
             response_data["nlp_insights"] = {
+                "mode": nlp_mode,
                 "intent": nlp_analysis.get('intent', {}).get('intent', 'general'),
                 "confidence": nlp_analysis.get('confidence_score', 0.5),
                 "sentiment": nlp_analysis.get('sentiment', {}).get('classification', 'neutral'),
                 "entities_found": len(nlp_analysis.get('entities', {}).get('materials', [])) + 
-                                len(nlp_analysis.get('entities', {}).get('locations', [])),
+                                len(nlp_analysis.get('entities', {}).get('locations', [])) +
+                                len(nlp_analysis.get('entities', {}).get('cement_types', [])),
                 "detected_language": nlp_analysis.get('language', {}).get('detected', {}).get('language', user_language)
             }
         
@@ -2641,20 +2746,14 @@ def health_check():
             "deep_learning": "enabled",
             "session_tracking": "active",
             "cement_expertise": "advanced",
-            "advanced_nlp": "enabled" if ADVANCED_NLP_AVAILABLE else "disabled"
+            "advanced_nlp": "enabled" if ADVANCED_NLP_AVAILABLE else ("lightweight" if LIGHTWEIGHT_NLP_AVAILABLE else "disabled")
         }
     })
 
 @app.route('/advanced_nlp_analysis', methods=['POST'])
 def advanced_nlp_analysis():
-    """Comprehensive NLP analysis endpoint"""
+    """Comprehensive NLP analysis endpoint with fallback support"""
     try:
-        if not ADVANCED_NLP_AVAILABLE:
-            return jsonify({
-                "error": "Advanced NLP capabilities not available",
-                "fallback_mode": True
-            })
-        
         data = request.get_json()
         text = data.get('text', '').strip()
         language = data.get('language', 'en')
@@ -2662,19 +2761,21 @@ def advanced_nlp_analysis():
         if not text:
             return jsonify({"error": "No text provided for analysis"})
         
-        # Perform comprehensive NLP analysis
-        analysis_result = process_user_query(text, language)
+        analysis_result = {}
+        capabilities = {}
+        nlp_mode = "disabled"
         
-        # Additional warehouse intelligence if multiple texts provided
-        texts = data.get('texts', [])
-        if texts:
-            warehouse_intelligence = extract_warehouse_intelligence(texts)
-            analysis_result['warehouse_intelligence'] = warehouse_intelligence
-        
-        return jsonify({
-            "success": True,
-            "analysis": analysis_result,
-            "capabilities": {
+        if ADVANCED_NLP_AVAILABLE:
+            # Perform comprehensive NLP analysis
+            analysis_result = process_user_query(text, language)
+            
+            # Additional warehouse intelligence if multiple texts provided
+            texts = data.get('texts', [])
+            if texts:
+                warehouse_intelligence = extract_warehouse_intelligence(texts)
+                analysis_result['warehouse_intelligence'] = warehouse_intelligence
+            
+            capabilities = {
                 "intent_recognition": True,
                 "entity_extraction": True,
                 "sentiment_analysis": True,
@@ -2684,22 +2785,40 @@ def advanced_nlp_analysis():
                 "topic_modeling": True,
                 "warehouse_specialization": True
             }
+            nlp_mode = "advanced"
+            
+        elif LIGHTWEIGHT_NLP_AVAILABLE:
+            # Use lightweight NLP analysis
+            analysis_result = process_nlp_analysis(text)
+            capabilities = get_nlp_capabilities()
+            nlp_mode = "lightweight"
+            
+        else:
+            return jsonify({
+                "error": "NLP capabilities not available",
+                "mode": "disabled",
+                "fallback": True
+            })
+        
+        return jsonify({
+            "success": True,
+            "mode": nlp_mode,
+            "analysis": analysis_result,
+            "capabilities": capabilities
         })
         
     except Exception as e:
-        logging.error(f"Advanced NLP analysis error: {e}")
+        logging.error(f"NLP analysis error: {e}")
         return jsonify({
             "error": f"Analysis failed: {str(e)}",
-            "fallback_mode": True
+            "mode": "error",
+            "fallback": True
         })
 
 @app.route('/conversation_intelligence', methods=['POST'])  
 def conversation_intelligence():
-    """Analyze conversation patterns and provide insights"""
+    """Analyze conversation patterns and provide insights with fallback support"""
     try:
-        if not ADVANCED_NLP_AVAILABLE:
-            return jsonify({"error": "Advanced NLP not available"})
-        
         # Get session ID
         session_id = session.get('session_id')
         if not session_id:
@@ -2711,11 +2830,41 @@ def conversation_intelligence():
         if not history:
             return jsonify({"error": "No conversation history found"})
         
-        # Perform comprehensive conversation analysis
-        analysis_result = analyze_conversation_history(history)
+        analysis_result = {}
+        nlp_mode = "disabled"
+        
+        if ADVANCED_NLP_AVAILABLE:
+            # Perform comprehensive conversation analysis
+            analysis_result = analyze_conversation_history(history)
+            nlp_mode = "advanced"
+            
+        elif LIGHTWEIGHT_NLP_AVAILABLE:
+            # Basic conversation analysis using lightweight NLP
+            analysis_result = {
+                "conversation_summary": {
+                    "total_turns": len(history),
+                    "recent_topics": [],
+                    "sentiment_trend": "neutral",
+                    "user_satisfaction": 0.5
+                },
+                "key_insights": [
+                    f"Processed {len(history)} conversation turns",
+                    "Lightweight analysis mode active",
+                    "Basic pattern recognition available"
+                ],
+                "processing_mode": "lightweight"
+            }
+            nlp_mode = "lightweight"
+            
+        else:
+            return jsonify({
+                "error": "NLP capabilities not available", 
+                "mode": "disabled"
+            })
         
         return jsonify({
             "success": True,
+            "mode": nlp_mode,
             "session_id": session_id,
             "conversation_analysis": analysis_result,
             "total_interactions": len(history),
@@ -2724,54 +2873,70 @@ def conversation_intelligence():
         
     except Exception as e:
         logging.error(f"Conversation intelligence error: {e}")
-        return jsonify({"error": f"Analysis failed: {str(e)}"})
+        return jsonify({"error": f"Analysis failed: {str(e)}", "mode": "error"})
 
 @app.route('/nlp_capabilities', methods=['GET'])
 def nlp_capabilities():
     """Return available NLP capabilities and model information"""
     try:
-        if not ADVANCED_NLP_AVAILABLE:
-            return jsonify({
-                "advanced_nlp": False,
-                "basic_capabilities": ["simple sentiment", "keyword matching"]
-            })
-        
-        # Get NLP processor instance
-        processor = nlp_processor
-        
-        capabilities = {
-            "advanced_nlp": True,
-            "models_loaded": {
-                "spacy": processor.nlp_model is not None,
-                "transformers": processor.intent_classifier is not None,
-                "sentiment": processor.sentiment_analyzer is not None,
-                "semantic": processor.semantic_model is not None,
-                "language_detection": True  # Available through advanced_nlp module
-            },
-            "features": {
-                "intent_recognition": True,
-                "entity_extraction": True,
-                "sentiment_analysis": True,
-                "language_detection": True,
-                "semantic_similarity": True,
-                "text_summarization": True,
-                "topic_modeling": True,
-                "conversation_flow_analysis": True,
-                "technical_specification_extraction": True,
-                "warehouse_context_analysis": True
-            },
-            "specialized_entities": {
-                "materials": len(processor.warehouse_entities["materials"]),
-                "locations": len(processor.warehouse_entities["locations"]),
-                "specifications": len(processor.warehouse_entities["specifications"]),
-                "operations": len(processor.warehouse_entities["operations"])
-            },
-            "supported_languages": ["en", "ar"],
-            "model_info": {
-                "spacy_model": "en_core_web_sm" if processor.nlp_model else None,
-                "semantic_model": "all-MiniLM-L6-v2" if processor.semantic_model else None
+        if ADVANCED_NLP_AVAILABLE:
+            # Get NLP processor instance
+            processor = nlp_processor
+            
+            capabilities = {
+                "mode": "advanced",
+                "advanced_nlp": True,
+                "models_loaded": {
+                    "spacy": processor.nlp_model is not None,
+                    "transformers": processor.intent_classifier is not None,
+                    "sentiment": processor.sentiment_analyzer is not None,
+                    "semantic": processor.semantic_model is not None,
+                    "language_detection": True
+                },
+                "features": {
+                    "intent_recognition": True,
+                    "entity_extraction": True,
+                    "sentiment_analysis": True,
+                    "language_detection": True,
+                    "semantic_similarity": True,
+                    "text_summarization": True,
+                    "topic_modeling": True,
+                    "conversation_flow_analysis": True,
+                    "technical_specification_extraction": True,
+                    "warehouse_context_analysis": True
+                },
+                "specialized_entities": {
+                    "materials": len(processor.warehouse_entities["materials"]),
+                    "locations": len(processor.warehouse_entities["locations"]),
+                    "specifications": len(processor.warehouse_entities["specifications"]),
+                    "operations": len(processor.warehouse_entities["operations"])
+                },
+                "supported_languages": ["en", "ar"],
+                "model_info": {
+                    "spacy_model": "en_core_web_sm" if processor.nlp_model else None,
+                    "semantic_model": "all-MiniLM-L6-v2" if processor.semantic_model else None
+                }
             }
-        }
+            
+        elif LIGHTWEIGHT_NLP_AVAILABLE:
+            capabilities = get_nlp_capabilities()
+            capabilities["mode"] = "lightweight"
+            
+        else:
+            capabilities = {
+                "mode": "disabled",
+                "advanced_nlp": False,
+                "lightweight_nlp": False,
+                "features": {
+                    "intent_recognition": False,
+                    "entity_extraction": False,
+                    "sentiment_analysis": False,
+                    "language_detection": False,
+                    "semantic_similarity": False
+                },
+                "basic_capabilities": ["simple pattern matching", "keyword detection"],
+                "reason": "No NLP libraries available - memory constraints or import errors"
+            }
         
         return jsonify(capabilities)
         
