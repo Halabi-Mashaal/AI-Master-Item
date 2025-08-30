@@ -1840,12 +1840,53 @@ def generate_text_response_with_memory(user_message, context, history, user_prof
     # Context-aware response generation
     user_lower = user_message.lower() if user_message else ""
     
-    # Handle simple greetings
+    # Handle simple greetings and help requests
     if any(greeting in user_lower for greeting in ['hello', 'hi', 'hey', 'مرحبا', 'مرحباً', 'أهلا', 'السلام عليكم']) and len(user_lower.split()) <= 3:
         if language == 'ar':
             return "مرحباً بكم! كيف يمكنني مساعدتكم اليوم؟"
         else:
             return "Hello! How can I help you today?"
+    
+    # Handle help requests
+    if any(help_phrase in user_lower for help_phrase in ['how can you help', 'what can you do', 'help me', 'كيف يمكنك مساعدتي', 'ماذا يمكنك أن تفعل', 'ما هي خدماتك']):
+        if language == 'ar':
+            return """**🤖 كيف يمكنني مساعدتكم:**
+
+**📊 تحليل البيانات:**
+• تحليل ملفات CSV و Excel
+• استخراج الرؤى من المستندات
+• تقييم جودة البيانات
+
+**🏭 خبرة الاسمنت:**
+• مواصفات الاسمنت (درجة 43، 53، PPC، PSC)
+• مراقبة الجودة والاختبارات
+• معايير الامتثال
+
+**📦 إدارة المخزون:**
+• تحسين المخزون
+• توقع الطلب
+• تقليل التكاليف
+
+اسألوني أي سؤال أو ارفعوا ملفاتكم للتحليل!"""
+        else:
+            return """**🤖 How I Can Help You:**
+
+**📊 Data Analysis:**
+• Analyze CSV & Excel files
+• Extract insights from documents  
+• Evaluate data quality
+
+**🏭 Cement Expertise:**
+• Cement specifications (Grade 43, 53, PPC, PSC)
+• Quality control and testing
+• Compliance standards
+
+**📦 Inventory Management:**
+• Optimize inventory levels
+• Forecast demand
+• Reduce costs
+
+Ask me anything or upload your files for analysis!"""
     
     # Enhanced cement industry responses with memory
     if any(term in user_lower for term in ['cement', 'concrete', 'opc', 'ppc', 'grade', 'اسمنت', 'خرسانة', 'درجة']):
@@ -1942,49 +1983,47 @@ def generate_text_response_with_memory(user_message, context, history, user_prof
     else:
         # General response with memory context
         if language == 'ar':
-            response = f"""{memory_prefix}
+            response = f"""🤖 **وكيل الذكاء الاصطناعي لشركة اسمنت اليمامة**
 
-🤖 **وكيل الذكاء الاصطناعي لشركة اسمنت اليمامة** (محسّن بالذاكرة والتعلم):
+مرحباً! كيف يمكنني مساعدتكم اليوم؟
 
-**أتخصص في عمليات صناعة الاسمنت مع:**
-• **تحليلات التعلم العميق:** التعرف على الأنماط والنمذجة التنبؤية
-• **ذاكرة المحادثة:** تاريخ 100 استفسار للردود السياقية
-• **الذكاء التكيفي:** التعلم من كل تفاعل
-• **خبرة الصناعة:** مواصفات الاسمنت، مراقبة الجودة، تحسين المخزون
+**🏭 خدماتي الأساسية:**
+• تحليل البيانات والملفات بالذكاء الاصطناعي
+• استشارات صناعة الاسمنت والجودة  
+• إدارة وتحسين المخزون
+• توقع الطلب والتنبؤات المالية
 
-**السياق الحالي:**
-• **عدد المحادثات:** {conversation_count} تفاعل مسجل
-• **مستوى الخبرة:** متكيف لمعرفة تقنية {expertise_level}
-• **التركيز الأساسي:** عمليات {primary_interest}
-• **حالة التعلم:** تحسن مستمر من ملاحظاتكم
+**📊 قدرات متقدمة:**
+• ذاكرة محادثة ذكية ({conversation_count} تفاعل)
+• تحليل أنماط البيانات
+• توصيات مخصصة لمستوى خبرتكم ({expertise_level})
 
-**القدرات المحسّنة:**
-📊 تحليل البيانات المتقدم مع التعرف على الأنماط
-🧠 ردود واعية للسياق مع ذاكرة المحادثة
-🎯 رؤى تنبؤية باستخدام خوارزميات التعلم الآلي
-🏭 خبرة صناعة الاسمنت مع امتثال الجودة"""
+**❓ اسألوني عن:**
+• مواصفات وأنواع الاسمنت
+• مراقبة الجودة والاختبارات
+• تحسين العمليات والتكاليف
+• تحليل الملفات والتقارير"""
         else:
-            response = f"""{memory_prefix}
+            response = f"""🤖 **Yamama Warehouse AI Agent**
 
-🤖 **Yamama Cement AI Agent** (Enhanced with Memory & Learning):
+Hello! How can I help you today?
 
-**I specialize in cement industry operations with:**
-• **Deep Learning Analytics:** Pattern recognition and predictive modeling
-• **Conversation Memory:** 100-prompt history for contextual responses
-• **Adaptive Intelligence:** Learning from each interaction
-• **Industry Expertise:** Cement specifications, quality control, inventory optimization
+**🏭 Core Services:**
+• AI-powered data analysis and file processing
+• Cement industry expertise and quality consulting
+• Inventory management and optimization
+• Demand forecasting and financial predictions
 
-**Current Context:**
-• **Conversation Count:** {conversation_count} interactions logged
-• **Expertise Level:** Adapted for {expertise_level} technical knowledge
-• **Primary Focus:** {primary_interest} operations
-• **Learning Status:** Continuously improving from your feedback
+**📊 Advanced Capabilities:**
+• Smart conversation memory ({conversation_count} interactions)
+• Pattern recognition in data
+• Personalized recommendations for {expertise_level} level
 
-**Enhanced Capabilities:**
-📊 Advanced data analysis with pattern recognition
-🧠 Context-aware responses with conversation memory  
-🎯 Predictive insights using machine learning algorithms
-🏭 Cement industry expertise with quality compliance"""
+**❓ Ask me about:**
+• Cement specifications and grades
+• Quality control and testing
+• Process optimization and cost reduction
+• File analysis and reporting"""
 
         if history:
             last_interaction = history[-1] if history else {}
