@@ -572,7 +572,7 @@ conversation_memory = ConversationMemory(max_history=100)
 deep_learning_engine = DeepLearningEngine()
 document_generator = DocumentGenerator()
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../static', static_url_path='/static')
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.secret_key = os.environ.get('SECRET_KEY', 'yamama-cement-ai-agent-secret-key-2025')
@@ -666,19 +666,15 @@ CHAT_TEMPLATE = """
             flex-shrink: 0;
         }
         .logo {
-            font-weight: bold;
-            font-size: 14px;
-            color: #2E7D32;
-            line-height: 1.2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .logo .arabic {
-            font-size: 16px;
-            color: #2E7D32;
-        }
-        .logo .english {
-            font-size: 12px;
-            color: #1565C0;
-            margin-top: 2px;
+        .logo-image {
+            height: 50px;
+            width: auto;
+            max-width: 120px;
+            object-fit: contain;
         }
         .header-content {
             text-align: center;
@@ -1108,8 +1104,7 @@ CHAT_TEMPLATE = """
             <div class="header-top-row">
                 <div class="logo-container">
                     <div class="logo">
-                        <div class="arabic">ذكاء الأعمال</div>
-                        <div class="english">BUSINESS INTELLIGENCE</div>
+                        <img src="/static/yama.png" alt="Yamama Cement Logo" class="logo-image">
                     </div>
                 </div>
                 <div class="header-content">
@@ -1142,102 +1137,130 @@ CHAT_TEMPLATE = """
                         <br><br>
                         <strong>📊 Data Analysis & Intelligence:</strong>
                         <br>• Analyze CSV, Excel files with advanced pattern recognition
-                        <br>• Generate data quality reports with 95%+ accuracy
-                        <br>• Identify duplicates and data inconsistencies
-                        <br>• Extract insights from documents, images, and PDFs
+                        <br>• Generate comprehensive data quality reports with 94%+ AI accuracy
+                        <br>• Statistical analysis, trend detection, and predictive modeling
+                        <br>• Extract insights from documents, images, PDFs, and Word files
+                        <br>• Interactive data visualization and automated reporting
                         <br><br>
-                        <strong>🧠 Advanced NLP Capabilities:</strong>
+                        <strong>🏢 Master Data Management (MDM):</strong>
+                        <br>• Create and manage items, suppliers, and customers
+                        <br>• Oracle EBS integration with real-time synchronization
+                        <br>• AI-powered data quality assessment and validation
+                        <br>• Bulk Excel import/export with intelligent field mapping
+                        <br>• Duplicate detection and data standardization
+                        <br>• Comprehensive audit trails and change management
+                        <br><br>
+                        <strong>🧠 Advanced AI & NLP:</strong>
                         <br>• Intent recognition and entity extraction (Materials, Locations, Quantities)
                         <br>• Advanced sentiment analysis with emotional context
-                        <br>• Automatic language detection (English/Arabic)
-                        <br>• Semantic similarity matching for better query understanding
-                        <br>• Technical specification parsing and analysis
-                        <br>• Conversation flow analysis and topic modeling
-                        <br>• Real-time language switching and contextual responses
+                        <br>• Automatic language detection (English/Arabic) with cultural awareness
+                        <br>• Semantic similarity matching for intelligent query understanding
+                        <br>• Technical specification parsing and compliance checking
+                        <br>• Conversation memory with contextual awareness (100+ interactions)
                         <br><br>
-                        <strong>🏭 Cement Industry Expertise:</strong>
-                        <br>• OPC Grade 43/53, PPC, PSC specifications and applications
-                        <br>• Quality control parameters (strength, fineness, setting time)
-                        <br>• IS 269:2015, IS 1489:2015, ASTM C150 compliance checking
-                        <br>• Storage requirements and shelf-life optimization
-                        <br><br>
-                        <strong>📦 Inventory Management:</strong>
-                        <br>• ABC analysis and inventory classification
-                        <br>• Demand forecasting with machine learning
-                        <br>• Safety stock calculations and reorder optimization
-                        <br>• FIFO rotation and quality preservation strategies
-                        <br><br>
-                        <strong>🎯 Predictive Analytics:</strong>
-                        <br>• Seasonal demand patterns and trend analysis
+                        <strong>📦 Inventory & Supply Chain Management:</strong>
+                        <br>• ABC analysis and intelligent inventory classification
+                        <br>• AI-powered demand forecasting with machine learning
+                        <br>• Safety stock calculations and automated reorder optimization
+                        <br>• Supplier risk assessment and performance analytics
                         <br>• Cost optimization with ROI calculations
-                        <br>• Supply chain risk assessment
-                        <br>• Equipment maintenance predictions
+                        <br>• Equipment maintenance predictions and scheduling
                         <br><br>
-                        <strong>🧠 Advanced AI Features:</strong>
-                        <br>• 100-prompt conversation memory
-                        <br>• Adaptive learning based on your expertise level
-                        <br>• Contextual responses with historical awareness
-                        <br>• Personalized recommendations and insights
+                        <strong>🎯 Business Intelligence & Analytics:</strong>
+                        <br>• KPI dashboards and performance monitoring
+                        <br>• Financial analysis and profitability optimization
+                        <br>• Seasonal patterns and market trend analysis  
+                        <br>• Supply chain risk assessment and mitigation strategies
+                        <br>• Comparative analysis across periods and categories
+                        <br>• Automated business reporting in multiple formats
                         <br><br>
-                        <strong>💡 How to Use:</strong>
-                        <br>• Ask questions about cement operations, inventory, or quality
-                        <br>• Upload files (up to 50MB) for instant AI analysis
-                        <br>• Request specific recommendations for your processes
+                        <strong>🔄 Enterprise Integration:</strong>
+                        <br>• Oracle EBS modules integration (Financials, Procurement, Inventory)
+                        <br>• REST API endpoints for system-to-system connectivity
+                        <br>• Real-time data synchronization with audit logging
+                        <br>• Workflow automation and approval processes
+                        <br>• Multi-tenant support for enterprise deployment
+                        <br><br>
+                        <strong>🌐 Multi-Language & Industry Support:</strong>
+                        <br>• Full Arabic and English support with cultural localization
+                        <br>• Industry-agnostic platform (Manufacturing, Retail, Healthcare, Construction)
+                        <br>• Saudi Arabian business compliance (SAR currency, SASO standards)
+                        <br>• Customizable for cement, construction materials, and general business
+                        <br><br>
+                        <strong>💡 How to Get Started:</strong>
+                        <br>• Ask natural language questions about your business operations
+                        <br>• Upload files (CSV, Excel, PDF, Word - up to 50MB) for AI analysis
+                        <br>• Create and manage master data through conversation or API
                         <br>• Switch to Arabic (العربية) using the language toggle above
+                        <br>• Access REST APIs for system integration and automation
                         <br><br>
-                        <strong>Ready to optimize your cement operations? How can I assist you today?</strong>
+                        <strong>🚀 Ready to transform your business operations with AI-powered intelligence? How can I assist you today?</strong>
                     </div>
                     <div class="ar-content" style="display: none;">
-                        <strong>🏭 مرحباً بكم في وكيل الذكاء الاصطناعي المتقدم لإدارة البنود الرئيسية من شركة اسمنت اليمامة!</strong>
+                        <strong>🏭 مرحباً بكم في وكيل الذكاء الاصطناعي المتقدم - يمامة وير هاوس لإدارة البيانات الأساسية!</strong>
                         <br><br>
-                        <strong>🤖 ما يمكنني فعله لك:</strong>
+                        <strong>🤖 ما يمكنني فعله لكم:</strong>
                         <br><br>
-                        <strong>📊 تحليل البيانات والذكاء:</strong>
-                        <br>• تحليل ملفات CSV و Excel بتقنيات التعرف على الأنماط المتقدمة
-                        <br>• إنتاج تقارير جودة البيانات بدقة تزيد عن 95%
-                        <br>• تحديد التكرارات وعدم اتساق البيانات
+                        <strong>📊 تحليل البيانات والذكاء الاصطناعي:</strong>
+                        <br>• تحليل ملفات CSV و Excel و PDF و Word بتقنيات التعرف على الأنماط المتقدمة
+                        <br>• إنتاج تقارير جودة البيانات شاملة بدقة تزيد عن 94%
+                        <br>• التحليل الإحصائي واكتشاف الاتجاهات والنمذجة التنبؤية
                         <br>• استخراج المعلومات من المستندات والصور وملفات PDF
+                        <br>• تصور البيانات التفاعلي والتقارير الآلية
                         <br><br>
-                        <strong>🧠 قدرات معالجة اللغة الطبيعية المتقدمة:</strong>
+                        <strong>🏢 إدارة البيانات الأساسية (MDM):</strong>
+                        <br>• إنشاء وإدارة البنود والموردين والعملاء
+                        <br>• التكامل مع أوراكل EBS والمزامنة في الوقت الفعلي
+                        <br>• تقييم جودة البيانات بالذكاء الاصطناعي والتحقق من الصحة
+                        <br>• الاستيراد/التصدير المجمع من Excel مع الخرائط الذكية
+                        <br>• اكتشاف المكررات وتوحيد البيانات
+                        <br>• مسارات التدقيق الشاملة وإدارة التغيير
+                        <br><br>
+                        <strong>🧠 الذكاء الاصطناعي ومعالجة اللغة الطبيعية المتقدمة:</strong>
                         <br>• التعرف على النوايا واستخراج الكيانات (المواد، المواقع، الكميات)
-                        <br>• تحليل المشاعر المتقدم مع السياق العاطفي
-                        <br>• الكشف التلقائي عن اللغة (العربية/الإنجليزية)
-                        <br>• المطابقة الدلالية لفهم أفضل للاستفسارات
-                        <br>• تحليل المواصفات الفنية واستخراجها
-                        <br>• تحليل تدفق المحادثة ونمذجة المواضيع
-                        <br>• التبديل الفوري للغة والاستجابات السياقية
+                        <br>• تحليل المشاعر المتقدم مع السياق العاطفي والثقافي
+                        <br>• الكشف التلقائي عن اللغة (العربية/الإنجليزية) مع الوعي الثقافي
+                        <br>• المطابقة الدلالية لفهم الاستفسارات الذكية
+                        <br>• تحليل المواصفات الفنية وفحص الامتثال
+                        <br>• ذاكرة المحادثة مع الوعي السياقي (100+ تفاعل)
                         <br><br>
-                        <strong>🏭 خبرة صناعة الاسمنت:</strong>
-                        <br>• مواصفات وتطبيقات الاسمنت العادي درجة 43/53، PPC، PSC
-                        <br>• معايير مراقبة الجودة (القوة، النعومة، وقت الشك)
-                        <br>• فحص الامتثال لمعايير IS 269:2015، IS 1489:2015، ASTM C150
-                        <br>• متطلبات التخزين وتحسين مدة الصلاحية
-                        <br><br>
-                        <strong>📦 إدارة المخزون:</strong>
-                        <br>• تحليل ABC وتصنيف المخزون
-                        <br>• توقع الطلب باستخدام التعلم الآلي
-                        <br>• حسابات المخزون الآمن وتحسين إعادة الطلب
-                        <br>• استراتيجيات دوران FIFO والحفاظ على الجودة
-                        <br><br>
-                        <strong>🎯 التحليلات التنبؤية:</strong>
-                        <br>• أنماط الطلب الموسمية وتحليل الاتجاهات
+                        <strong>📦 إدارة المخزون وسلسلة التوريد:</strong>
+                        <br>• تحليل ABC والتصنيف الذكي للمخزون
+                        <br>• توقع الطلب بالذكاء الاصطناعي والتعلم الآلي
+                        <br>• حسابات المخزون الآمن وتحسين إعادة الطلب الآلي
+                        <br>• تقييم مخاطر الموردين وتحليلات الأداء
                         <br>• تحسين التكلفة مع حسابات العائد على الاستثمار
-                        <br>• تقييم مخاطر سلسلة التوريد
-                        <br>• توقعات صيانة المعدات
+                        <br>• توقعات صيانة المعدات والجدولة
                         <br><br>
-                        <strong>🧠 ميزات الذكاء الاصطناعي المتقدمة:</strong>
-                        <br>• ذاكرة محادثة تصل إلى 100 استفسار
-                        <br>• تعلم تكيفي بناءً على مستوى خبرتك
-                        <br>• ردود سياقية مع الوعي التاريخي
-                        <br>• توصيات ورؤى مخصصة
+                        <strong>🎯 ذكاء الأعمال والتحليلات:</strong>
+                        <br>• لوحات KPI ومراقبة الأداء
+                        <br>• التحليل المالي وتحسين الربحية
+                        <br>• الأنماط الموسمية وتحليل اتجاهات السوق
+                        <br>• تقييم مخاطر سلسلة التوريد واستراتيجيات التخفيف
+                        <br>• التحليل المقارن عبر الفترات والفئات
+                        <br>• التقارير التجارية الآلية بتنسيقات متعددة
                         <br><br>
-                        <strong>💡 كيفية الاستخدام:</strong>
-                        <br>• اسأل أسئلة حول عمليات الاسمنت والمخزون أو الجودة
-                        <br>• ارفع الملفات (حتى 50 ميجابايت) للتحليل الفوري بالذكاء الاصطناعي
-                        <br>• اطلب توصيات محددة لعملياتك
+                        <strong>🔄 التكامل مع الأنظمة المؤسسية:</strong>
+                        <br>• تكامل وحدات أوراكل EBS (المالية، المشتريات، المخزون)
+                        <br>• نقاط API REST للاتصال بين الأنظمة
+                        <br>• مزامنة البيانات في الوقت الفعلي مع سجلات التدقيق
+                        <br>• أتمتة سير العمل وعمليات الموافقة
+                        <br>• دعم متعدد المستأجرين للنشر المؤسسي
+                        <br><br>
+                        <strong>🌐 الدعم متعدد اللغات والصناعات:</strong>
+                        <br>• دعم كامل للعربية والإنجليزية مع التوطين الثقافي
+                        <br>• منصة غير مقيدة بالصناعة (التصنيع، التجزئة، الرعاية الصحية، الإنشاءات)
+                        <br>• الامتثال التجاري السعودي (عملة الريال، معايير الساسو)
+                        <br>• قابل للتخصيص للإسمنت ومواد البناء والأعمال العامة
+                        <br><br>
+                        <strong>💡 كيفية البدء:</strong>
+                        <br>• اسأل أسئلة بالغة الطبيعية حول عمليات أعمالك
+                        <br>• ارفع الملفات (CSV، Excel، PDF، Word - حتى 50 ميجابايت) للتحليل بالذكاء الاصطناعي
+                        <br>• إنشاء وإدارة البيانات الأساسية من خلال المحادثة أو API
                         <br>• انتقل إلى الإنجليزية (English) باستخدام مفتاح اللغة أعلاه
+                        <br>• الوصول إلى REST APIs للتكامل والأتمتة
                         <br><br>
-                        <strong>مستعد لتحسين عمليات الاسمنت الخاصة بك؟ كيف يمكنني مساعدتك اليوم؟</strong>
+                        <strong>🚀 مستعد لتحويل عمليات أعمالك بذكاء اصطناعي متقدم؟ كيف يمكنني مساعدتك اليوم؟</strong>
                     </div>
                 </div>
             </div>
@@ -1260,7 +1283,7 @@ CHAT_TEMPLATE = """
             </div>
             <div id="fileList"></div>
             <div class="message-row">
-                <input type="text" id="messageInput" placeholder="Ask me about master items, inventory, or upload files for analysis..." autofocus>
+                <input type="text" id="messageInput" placeholder="Ask me about warehouse operations, inventory, data analysis, master data management, or upload files for AI analysis..." autofocus>
                 <button onclick="sendMessage()" id="sendButton">Send</button>
             </div>
         </div>
@@ -2034,7 +2057,7 @@ def generate_text_response_with_memory(user_message, context, history, user_prof
         if language == 'ar':
             return "مرحباً بكم! كيف يمكنني مساعدتكم اليوم؟"
         else:
-            return "Hello! How can I help you today?"
+            return "Hello! I'm your Warehouse Yamama AI Agent with advanced data analysis, Master Data Management, and Oracle EBS integration capabilities. How can I help you today?"
     
     # Handle help requests more naturally
     if any(help_phrase in user_lower for help_phrase in ['how can you help', 'what can you do', 'help me', 'كيف يمكنك مساعدتي', 'ماذا يمكنك أن تفعل', 'ما هي خدماتك', 'how can you help me']):
@@ -2058,29 +2081,49 @@ def generate_text_response_with_memory(user_message, context, history, user_prof
 
 اسألني أي سؤال أو ارفع ملفاتك للتحليل!"""
         else:
-            help_text = """Hello! Here's how I can assist you:
+            help_text = """🤖 **Warehouse Yamama AI Agent - Complete Capabilities:**
 
-1. **Data Analysis:**
-   • Analyze CSV & Excel files
-   • Extract insights from documents
-   • Evaluate data quality
+1. **📊 Data Analysis & Intelligence:**
+   • Analyze CSV, Excel, PDF, Word files with AI accuracy 94%+
+   • Statistical analysis, trend detection, predictive modeling
+   • Interactive data visualization and automated reporting
+   • Extract insights from documents and images
 
-2. **Inventory Management:**
-   • Optimize inventory levels
-   • Forecast demand
-   • Reduce costs"""
+2. **🏢 Master Data Management (MDM):**
+   • Create and manage items, suppliers, customers
+   • Oracle EBS real-time integration and synchronization
+   • AI-powered data quality assessment and validation
+   • Bulk Excel import/export with intelligent mapping
+   • Duplicate detection and data standardization
+
+3. **📦 Inventory & Supply Chain:**
+   • ABC analysis and intelligent inventory classification
+   • AI-powered demand forecasting with machine learning
+   • Safety stock calculations and reorder optimization
+   • Supplier risk assessment and performance analytics
+   • Cost optimization with ROI calculations
+
+4. **🎯 Business Intelligence:**
+   • KPI dashboards and performance monitoring
+   • Financial analysis and profitability optimization
+   • Seasonal patterns and market trend analysis
+   • Supply chain risk assessment and mitigation
+   • Automated business reporting in multiple formats
+
+5. **🔄 Enterprise Integration:**
+   • Oracle EBS modules (Financials, Procurement, Inventory)
+   • REST API endpoints for system connectivity
+   • Workflow automation and approval processes
+   • Comprehensive audit trails and change management
+
+6. **🌐 Multi-Language & Industry Support:**
+   • Full Arabic/English support with cultural awareness
+   • Manufacturing, Retail, Healthcare, Construction industries
+   • Cement industry expertise with compliance checking
+   • Saudi Arabian business localization
+
+**🚀 Ready to transform your business? Ask me anything or upload your files!**"""
             
-            if MDM_AVAILABLE:
-                help_text += """
-
-3. **Master Data Management (MDM):**
-   • Create and manage items
-   • Supplier data management
-   • Customer data management  
-   • Oracle EBS integration
-   • Data quality assessment"""
-            
-            help_text += "\n\nAsk me anything or upload your files for analysis!"
             return help_text
     
     # Enhanced business intelligence responses with memory
@@ -2293,26 +2336,49 @@ def generate_text_response_with_memory(user_message, context, history, user_prof
 • إدارة المخزون والتنبؤ
 • إعداد التقارير والتحليلات"""
         else:
-            response = f"""🤖 **Business Intelligence AI Agent**
+            response = f"""🤖 **Warehouse Yamama AI Agent - Business Intelligence & MDM Platform**
 
 Hello! How can I help you today?
 
 **📊 Core Services:**
-• AI-powered data analysis and file processing
-• Inventory management and optimization
-• Demand forecasting and financial predictions
-• Performance analysis and reporting
+• AI-powered data analysis and file processing (CSV, Excel, PDF, Word)
+• Master Data Management with Oracle EBS integration
+• Inventory management and supply chain optimization
+• Advanced demand forecasting and financial predictions
+• Real-time performance analysis and automated reporting
 
-**🧠 Advanced Capabilities:**
-• Smart conversation memory ({conversation_count} interactions)
-• Pattern recognition in data
+**🏢 Master Data Management:**
+• Create and manage items, suppliers, customers
+• Oracle EBS real-time synchronization with fallback modes
+• AI data quality assessment (94%+ accuracy)
+• Bulk Excel import/export with intelligent mapping
+• Duplicate detection and data standardization
+
+**🧠 Advanced AI Capabilities:**
+• Conversational memory ({conversation_count} interactions)
+• Pattern recognition and anomaly detection
+• Multilingual support (Arabic/English) with cultural awareness
 • Personalized recommendations for {expertise_level} level
+• Natural language processing with intent recognition
 
-**❓ Ask me about:**
-• Data file analysis
-• Process optimization and cost reduction
-• Inventory management and forecasting
-• Report generation and insights"""
+**🔄 Enterprise Integration:**
+• REST API endpoints for system connectivity
+• Oracle EBS modules integration (Financials, Procurement, Inventory)
+• Workflow automation and approval processes
+• Comprehensive audit trails and change management
+
+**❓ What I Can Help You With:**
+• Analyze data files and generate insights
+• Create and manage master data entities
+• Optimize inventory levels and forecast demand
+• Generate comprehensive business reports
+• Integrate with Oracle EBS and other enterprise systems
+• Assess and improve data quality across your organization
+
+**🌐 Multi-Industry Support:**
+• Manufacturing & Supply Chain • Retail & E-commerce
+• Construction & Engineering • Healthcare & Pharmaceuticals
+• Customizable for cement, materials, and general business operations"""
 
         if history:
             last_interaction = history[-1] if history else {}
