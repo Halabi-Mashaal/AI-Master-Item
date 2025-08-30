@@ -835,8 +835,8 @@ CHAT_TEMPLATE = """
         }
         .file-upload-area {
             border: 2px dashed #2E7D32;
-            border-radius: 15px;
-            padding: 25px;
+            border-radius: 12px;
+            padding: 15px;
             text-align: center;
             background: linear-gradient(135deg, #e8f5e8 0%, #f1f8e9 100%);
             cursor: pointer;
@@ -856,8 +856,8 @@ CHAT_TEMPLATE = """
             box-shadow: 0 8px 25px rgba(21, 101, 192, 0.3);
         }
         .file-upload-icon {
-            font-size: 32px;
-            margin-bottom: 10px;
+            font-size: 24px;
+            margin-bottom: 8px;
             background: linear-gradient(135deg, #2E7D32, #1565C0);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -865,14 +865,14 @@ CHAT_TEMPLATE = """
         }
         .file-upload-text {
             font-weight: 600;
-            font-size: 18px;
+            font-size: 16px;
             color: #2E7D32;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
         .file-upload-subtitle {
-            font-size: 14px;
+            font-size: 12px;
             color: #666;
-            line-height: 1.4;
+            line-height: 1.3;
         }
         .file-info {
             display: flex;
@@ -1819,41 +1819,41 @@ def generate_text_response_with_memory(user_message, context, history, user_prof
         else:
             return "Hello! How can I help you today?"
     
-    # Handle help requests
-    if any(help_phrase in user_lower for help_phrase in ['how can you help', 'what can you do', 'help me', 'كيف يمكنك مساعدتي', 'ماذا يمكنك أن تفعل', 'ما هي خدماتك']):
+    # Handle help requests more naturally
+    if any(help_phrase in user_lower for help_phrase in ['how can you help', 'what can you do', 'help me', 'كيف يمكنك مساعدتي', 'ماذا يمكنك أن تفعل', 'ما هي خدماتك', 'how can you help me']):
         if language == 'ar':
-            return """**🤖 كيف يمكنني مساعدتكم:**
+            return """🤖 **أهلاً بكم! إليكم خدماتي:**
 
-**📊 تحليل البيانات:**
+📊 **تحليل البيانات:**
 • تحليل ملفات CSV و Excel
 • استخراج الرؤى من المستندات
 • تقييم جودة البيانات
 
-**🏭 خبرة الاسمنت:**
+🏭 **خبرة الاسمنت:**
 • مواصفات الاسمنت (درجة 43، 53، PPC، PSC)
 • مراقبة الجودة والاختبارات
 • معايير الامتثال
 
-**📦 إدارة المخزون:**
+📦 **إدارة المخزون:**
 • تحسين المخزون
 • توقع الطلب
 • تقليل التكاليف
 
 اسألوني أي سؤال أو ارفعوا ملفاتكم للتحليل!"""
         else:
-            return """**🤖 How I Can Help You:**
+            return """🤖 **Hello! Here's how I can assist you:**
 
-**📊 Data Analysis:**
+📊 **Data Analysis:**
 • Analyze CSV & Excel files
 • Extract insights from documents  
 • Evaluate data quality
 
-**🏭 Cement Expertise:**
+🏭 **Cement Expertise:**
 • Cement specifications (Grade 43, 53, PPC, PSC)
 • Quality control and testing
 • Compliance standards
 
-**📦 Inventory Management:**
+📦 **Inventory Management:**
 • Optimize inventory levels
 • Forecast demand
 • Reduce costs
