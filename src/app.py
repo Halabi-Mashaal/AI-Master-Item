@@ -13,6 +13,23 @@ from werkzeug.utils import secure_filename
 import mimetypes
 import csv
 
+# Advanced NLP Integration
+try:
+    import sys
+    import os
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+    from advanced_nlp import (
+        nlp_processor, 
+        process_user_query, 
+        analyze_conversation_history,
+        extract_warehouse_intelligence
+    )
+    ADVANCED_NLP_AVAILABLE = True
+    logging.info("Advanced NLP capabilities loaded successfully")
+except ImportError as e:
+    ADVANCED_NLP_AVAILABLE = False
+    logging.warning(f"Advanced NLP not available: {e}. Using basic processing.")
+
 # Try to import pandas, fallback to csv if not available
 try:
     import pandas as pd
@@ -1051,6 +1068,15 @@ CHAT_TEMPLATE = """
                         <br>• Identify duplicates and data inconsistencies
                         <br>• Extract insights from documents, images, and PDFs
                         <br><br>
+                        <strong>🧠 Advanced NLP Capabilities:</strong>
+                        <br>• Intent recognition and entity extraction (Materials, Locations, Quantities)
+                        <br>• Advanced sentiment analysis with emotional context
+                        <br>• Automatic language detection (English/Arabic)
+                        <br>• Semantic similarity matching for better query understanding
+                        <br>• Technical specification parsing and analysis
+                        <br>• Conversation flow analysis and topic modeling
+                        <br>• Real-time language switching and contextual responses
+                        <br><br>
                         <strong>🏭 Cement Industry Expertise:</strong>
                         <br>• OPC Grade 43/53, PPC, PSC specifications and applications
                         <br>• Quality control parameters (strength, fineness, setting time)
@@ -1093,6 +1119,15 @@ CHAT_TEMPLATE = """
                         <br>• إنتاج تقارير جودة البيانات بدقة تزيد عن 95%
                         <br>• تحديد التكرارات وعدم اتساق البيانات
                         <br>• استخراج المعلومات من المستندات والصور وملفات PDF
+                        <br><br>
+                        <strong>🧠 قدرات معالجة اللغة الطبيعية المتقدمة:</strong>
+                        <br>• التعرف على النوايا واستخراج الكيانات (المواد، المواقع، الكميات)
+                        <br>• تحليل المشاعر المتقدم مع السياق العاطفي
+                        <br>• الكشف التلقائي عن اللغة (العربية/الإنجليزية)
+                        <br>• المطابقة الدلالية لفهم أفضل للاستفسارات
+                        <br>• تحليل المواصفات الفنية واستخراجها
+                        <br>• تحليل تدفق المحادثة ونمذجة المواضيع
+                        <br>• التبديل الفوري للغة والاستجابات السياقية
                         <br><br>
                         <strong>🏭 خبرة صناعة الاسمنت:</strong>
                         <br>• مواصفات وتطبيقات الاسمنت العادي درجة 43/53، PPC، PSC
@@ -1715,20 +1750,57 @@ def chat():
             file_analysis = ""
             context = conversation_memory.get_context_summary(session_id)
         
+        # Advanced NLP Processing
+        nlp_analysis = {}
+        if ADVANCED_NLP_AVAILABLE and user_message:
+            try:
+                nlp_analysis = process_user_query(user_message, user_language)
+                logging.info(f"NLP Analysis completed for session {session_id}")
+                
+                # Extract key insights for context
+                if nlp_analysis:
+                    context['nlp_intent'] = nlp_analysis.get('intent', {})
+                    context['nlp_entities'] = nlp_analysis.get('entities', {})
+                    context['nlp_sentiment'] = nlp_analysis.get('sentiment', {})
+                    context['nlp_confidence'] = nlp_analysis.get('confidence_score', 0.5)
+                    context['detected_language'] = nlp_analysis.get('language', {}).get('detected', {})
+                    
+                    # Override language if NLP detection is confident
+                    detected_lang = nlp_analysis.get('language', {}).get('detected', {})
+                    if detected_lang.get('confidence', 0) > 0.8:
+                        user_language = detected_lang.get('language', user_language)
+                        logging.info(f"Language auto-detected as: {user_language}")
+                        
+            except Exception as e:
+                logging.error(f"Advanced NLP processing error: {e}")
+                # Continue with basic processing if NLP fails
+        
         # Get conversation history and user profile
         history = conversation_memory.get_conversation_history(session_id, 5)
         user_profile = conversation_memory.get_user_profile(session_id)
         
-        # Generate enhanced response with memory
+        # Generate enhanced response with memory and NLP insights
         if file_analysis:
             response = generate_enhanced_file_response(file_analysis, user_message, context, history, user_profile, user_language)
         else:
-            response = generate_text_response_with_memory(user_message, context, history, user_profile, user_language)
+            response = generate_text_response_with_memory(user_message, context, history, user_profile, user_language, nlp_analysis)
         
-        # Store interaction in memory
+        # Store interaction in memory with NLP analysis
         conversation_memory.add_interaction(session_id, user_message, response, context)
         
-        return jsonify({"response": response})
+        # Add NLP insights to response if available
+        response_data = {"response": response}
+        if nlp_analysis and ADVANCED_NLP_AVAILABLE:
+            response_data["nlp_insights"] = {
+                "intent": nlp_analysis.get('intent', {}).get('intent', 'general'),
+                "confidence": nlp_analysis.get('confidence_score', 0.5),
+                "sentiment": nlp_analysis.get('sentiment', {}).get('classification', 'neutral'),
+                "entities_found": len(nlp_analysis.get('entities', {}).get('materials', [])) + 
+                                len(nlp_analysis.get('entities', {}).get('locations', [])),
+                "detected_language": nlp_analysis.get('language', {}).get('detected', {}).get('language', user_language)
+            }
+        
+        return jsonify(response_data)
         
     except Exception as e:
         logging.error(f"Chat error: {str(e)}")
@@ -1786,12 +1858,32 @@ def generate_enhanced_file_response(file_analysis, user_message, context, histor
     
     return response
 
-def generate_text_response_with_memory(user_message, context, history, user_profile, language='en'):
-    """Enhanced text response generation with conversation memory and learning"""
+def generate_text_response_with_memory(user_message, context, history, user_profile, language='en', nlp_analysis=None):
+    """Enhanced text response generation with conversation memory, learning, and advanced NLP"""
     
     expertise_level = user_profile.get('technical_level', 'intermediate')
     conversation_count = context.get('conversation_length', 0)
     primary_interest = context.get('primary_interest', 'general')
+    
+    # Extract NLP insights if available
+    nlp_intent = context.get('nlp_intent', {})
+    nlp_entities = context.get('nlp_entities', {})
+    nlp_sentiment = context.get('nlp_sentiment', {})
+    nlp_confidence = context.get('nlp_confidence', 0.5)
+    
+    # Intent-based response customization
+    intent_type = nlp_intent.get('intent', 'general_inquiry')
+    intent_confidence = nlp_intent.get('confidence', 0.5)
+    
+    # Entity-aware response enhancement
+    found_materials = nlp_entities.get('materials', [])
+    found_locations = nlp_entities.get('locations', [])
+    found_quantities = nlp_entities.get('quantities', [])
+    found_specs = nlp_entities.get('specifications', [])
+    
+    # Sentiment-aware response tone
+    sentiment_class = nlp_sentiment.get('classification', 'neutral')
+    sentiment_score = nlp_sentiment.get('compound_score', 0.0)
     
     # Personalization prefix based on language
     if language == 'ar':
@@ -2005,6 +2097,114 @@ Hello! How can I help you today?
                 else:
                     response += f"\n\n🔄 **Continuing Context:** Building on our previous discussion about {last_interaction.get('context', {}).get('topic', 'cement operations')}."
     
+    # Advanced NLP-Enhanced Response Customization
+    if nlp_analysis and ADVANCED_NLP_AVAILABLE:
+        try:
+            # Intent-specific response enhancements
+            if intent_type == 'inventory_inquiry' and found_materials:
+                material_names = [m.get('text', '') for m in found_materials[:3]]
+                if language == 'ar':
+                    response += f"\n\n🎯 **تحليل ذكي:** اكتشفت اهتمامكم بالمواد: {', '.join(material_names)}"
+                else:
+                    response += f"\n\n🎯 **Smart Analysis:** Detected interest in materials: {', '.join(material_names)}"
+            
+            elif intent_type == 'specification_query' and found_specs:
+                spec_names = [s.get('text', '') for s in found_specs[:2]]
+                if language == 'ar':
+                    response += f"\n\n📋 **مواصفات فنية:** {', '.join(spec_names)}"
+                else:
+                    response += f"\n\n📋 **Technical Specifications:** {', '.join(spec_names)}"
+            
+            elif intent_type == 'pricing_inquiry':
+                if language == 'ar':
+                    response += f"\n\n💰 **تحليل التسعير:** يمكنني توفير تقديرات تكلفة مفصلة ومقارنات السوق"
+                else:
+                    response += f"\n\n💰 **Pricing Analysis:** I can provide detailed cost estimates and market comparisons"
+            
+            # Location-aware responses
+            if found_locations:
+                locations = [l.get('text', '') for l in found_locations[:2]]
+                if language == 'ar':
+                    response += f"\n\n📍 **مواقع محددة:** {', '.join(locations)}"
+                else:
+                    response += f"\n\n📍 **Specific Locations:** {', '.join(locations)}"
+            
+            # Quantity-aware responses
+            if found_quantities:
+                quantities = []
+                for q in found_quantities[:2]:
+                    if isinstance(q, dict) and 'value' in q and 'unit' in q:
+                        quantities.append(f"{q['value']} {q['unit']}")
+                if quantities:
+                    if language == 'ar':
+                        response += f"\n\n📊 **كميات مذكورة:** {', '.join(quantities)}"
+                    else:
+                        response += f"\n\n📊 **Mentioned Quantities:** {', '.join(quantities)}"
+            
+            # Sentiment-aware response tone adjustment
+            if sentiment_class == 'negative' and sentiment_score < -0.3:
+                if language == 'ar':
+                    response += f"\n\n🤝 **دعم إضافي:** أفهم أن لديكم مخاوف، دعني أقدم المساعدة المفصلة"
+                else:
+                    response += f"\n\n🤝 **Additional Support:** I understand you have concerns, let me provide detailed assistance"
+            
+            elif sentiment_class == 'positive' and sentiment_score > 0.3:
+                if language == 'ar':
+                    response += f"\n\n✨ **ممتاز!** يسرني أن أساعدكم بهذه الروح الإيجابية"
+                else:
+                    response += f"\n\n✨ **Excellent!** I'm delighted to help with your positive approach"
+            
+            # Confidence-based response adjustment
+            if nlp_confidence > 0.8:
+                if language == 'ar':
+                    response += f"\n\n🎯 **تحليل عالي الثقة:** ({nlp_confidence*100:.1f}% ثقة) - توصياتي مدعومة بتحليل متقدم"
+                else:
+                    response += f"\n\n🎯 **High Confidence Analysis:** ({nlp_confidence*100:.1f}% confidence) - My recommendations are backed by advanced analysis"
+            
+            # Technical specification insights
+            if nlp_analysis.get('technical_specifications'):
+                tech_specs = nlp_analysis['technical_specifications']
+                if tech_specs.get('strengths') or tech_specs.get('grades'):
+                    if language == 'ar':
+                        response += f"\n\n🔬 **تحليل المواصفات:** اكتشفت مواصفات تقنية في استفساركم - يمكنني تقديم تفاصيل أكثر"
+                    else:
+                        response += f"\n\n🔬 **Specification Analysis:** Detected technical specifications in your query - I can provide more details"
+            
+            # Warehouse context insights
+            warehouse_context = nlp_analysis.get('warehouse_context', {})
+            if warehouse_context.get('urgency') == 'high':
+                if language == 'ar':
+                    response += f"\n\n⚡ **أولوية عالية:** أفهم أن هذا الأمر عاجل، سأقدم الحلول السريعة"
+                else:
+                    response += f"\n\n⚡ **High Priority:** I understand this is urgent, I'll provide quick solutions"
+            
+            # Add suggested follow-up questions based on intent
+            suggested_actions = warehouse_context.get('suggested_actions', [])
+            if suggested_actions:
+                if language == 'ar':
+                    response += f"\n\n💡 **اقتراحات الإجراءات:** "
+                    action_map = {
+                        'check_stock_levels': 'فحص مستويات المخزون',
+                        'search_catalog': 'البحث في الكتالوج', 
+                        'generate_quote': 'إنشاء عرض سعر',
+                        'verify_location': 'التحقق من الموقع'
+                    }
+                else:
+                    response += f"\n\n💡 **Suggested Actions:** "
+                    action_map = {
+                        'check_stock_levels': 'Check stock levels',
+                        'search_catalog': 'Search catalog',
+                        'generate_quote': 'Generate quote', 
+                        'verify_location': 'Verify location'
+                    }
+                
+                actions_text = [action_map.get(action, action) for action in suggested_actions[:3]]
+                response += ', '.join(actions_text)
+                
+        except Exception as e:
+            logging.error(f"NLP enhancement error: {e}")
+            # Continue with basic response if NLP enhancement fails
+    
     return response
 
 def analyze_files(files):
@@ -2168,7 +2368,10 @@ def analyze_files(files):
 
 **🔍 Document Processing:**
 • Text content extracted and indexed
-• Ready for natural language processing
+• Advanced NLP analysis available (Intent, Entities, Sentiment)
+• Automatic language detection (English/Arabic)
+• Technical specification extraction ready
+• Warehouse context analysis enabled
 • Can identify master item specifications
 • Suitable for compliance documentation analysis
 
@@ -2441,9 +2644,144 @@ def health_check():
             "conversation_memory": "100 prompts",
             "deep_learning": "enabled",
             "session_tracking": "active",
-            "cement_expertise": "advanced"
+            "cement_expertise": "advanced",
+            "advanced_nlp": "enabled" if ADVANCED_NLP_AVAILABLE else "disabled"
         }
     })
+
+@app.route('/advanced_nlp_analysis', methods=['POST'])
+def advanced_nlp_analysis():
+    """Comprehensive NLP analysis endpoint"""
+    try:
+        if not ADVANCED_NLP_AVAILABLE:
+            return jsonify({
+                "error": "Advanced NLP capabilities not available",
+                "fallback_mode": True
+            })
+        
+        data = request.get_json()
+        text = data.get('text', '').strip()
+        language = data.get('language', 'en')
+        
+        if not text:
+            return jsonify({"error": "No text provided for analysis"})
+        
+        # Perform comprehensive NLP analysis
+        analysis_result = process_user_query(text, language)
+        
+        # Additional warehouse intelligence if multiple texts provided
+        texts = data.get('texts', [])
+        if texts:
+            warehouse_intelligence = extract_warehouse_intelligence(texts)
+            analysis_result['warehouse_intelligence'] = warehouse_intelligence
+        
+        return jsonify({
+            "success": True,
+            "analysis": analysis_result,
+            "capabilities": {
+                "intent_recognition": True,
+                "entity_extraction": True,
+                "sentiment_analysis": True,
+                "language_detection": True,
+                "semantic_similarity": True,
+                "conversation_analysis": True,
+                "topic_modeling": True,
+                "warehouse_specialization": True
+            }
+        })
+        
+    except Exception as e:
+        logging.error(f"Advanced NLP analysis error: {e}")
+        return jsonify({
+            "error": f"Analysis failed: {str(e)}",
+            "fallback_mode": True
+        })
+
+@app.route('/conversation_intelligence', methods=['POST'])  
+def conversation_intelligence():
+    """Analyze conversation patterns and provide insights"""
+    try:
+        if not ADVANCED_NLP_AVAILABLE:
+            return jsonify({"error": "Advanced NLP not available"})
+        
+        # Get session ID
+        session_id = session.get('session_id')
+        if not session_id:
+            return jsonify({"error": "No active session"})
+        
+        # Get conversation history
+        history = conversation_memory.get_conversation_history(session_id, 50)  # Last 50 interactions
+        
+        if not history:
+            return jsonify({"error": "No conversation history found"})
+        
+        # Perform comprehensive conversation analysis
+        analysis_result = analyze_conversation_history(history)
+        
+        return jsonify({
+            "success": True,
+            "session_id": session_id,
+            "conversation_analysis": analysis_result,
+            "total_interactions": len(history),
+            "analysis_timestamp": datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logging.error(f"Conversation intelligence error: {e}")
+        return jsonify({"error": f"Analysis failed: {str(e)}"})
+
+@app.route('/nlp_capabilities', methods=['GET'])
+def nlp_capabilities():
+    """Return available NLP capabilities and model information"""
+    try:
+        if not ADVANCED_NLP_AVAILABLE:
+            return jsonify({
+                "advanced_nlp": False,
+                "basic_capabilities": ["simple sentiment", "keyword matching"]
+            })
+        
+        # Get NLP processor instance
+        processor = nlp_processor
+        
+        capabilities = {
+            "advanced_nlp": True,
+            "models_loaded": {
+                "spacy": processor.nlp_model is not None,
+                "transformers": processor.intent_classifier is not None,
+                "sentiment": processor.sentiment_analyzer is not None,
+                "semantic": processor.semantic_model is not None,
+                "language_detection": True  # Available through advanced_nlp module
+            },
+            "features": {
+                "intent_recognition": True,
+                "entity_extraction": True,
+                "sentiment_analysis": True,
+                "language_detection": True,
+                "semantic_similarity": True,
+                "text_summarization": True,
+                "topic_modeling": True,
+                "conversation_flow_analysis": True,
+                "technical_specification_extraction": True,
+                "warehouse_context_analysis": True
+            },
+            "specialized_entities": {
+                "materials": len(processor.warehouse_entities["materials"]),
+                "locations": len(processor.warehouse_entities["locations"]),
+                "specifications": len(processor.warehouse_entities["specifications"]),
+                "operations": len(processor.warehouse_entities["operations"])
+            },
+            "supported_languages": ["en", "ar"],
+            "model_info": {
+                "spacy_model": "en_core_web_sm" if processor.nlp_model else None,
+                "semantic_model": "all-MiniLM-L6-v2" if processor.semantic_model else None
+            }
+        }
+        
+        return jsonify(capabilities)
+        
+    except Exception as e:
+        logging.error(f"NLP capabilities error: {e}")
+        return jsonify({"error": f"Failed to get capabilities: {str(e)}"})
 
 @app.route('/generate_analysis', methods=['POST'])
 def generate_analysis_document():
