@@ -1597,33 +1597,8 @@ CHAT_TEMPLATE = """
         }
 
         function updateExpertiseIndicator() {
-            const expertiseColors = {
-                'beginner': '#4CAF50',
-                'intermediate': '#FF9800', 
-                'advanced': '#F44336'
-            };
-            
-            // Add expertise indicator to the header if it doesn't exist
-            let indicator = document.getElementById('expertiseIndicator');
-            if (!indicator) {
-                indicator = document.createElement('div');
-                indicator.id = 'expertiseIndicator';
-                indicator.style.cssText = `
-                    position: absolute;
-                    top: 15px;
-                    right: 25px;
-                    background: white;
-                    padding: 8px 12px;
-                    border-radius: 20px;
-                    font-size: 12px;
-                    font-weight: bold;
-                    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-                `;
-                document.querySelector('.header').appendChild(indicator);
-            }
-            
-            indicator.innerHTML = `🧠 ${userExpertiseLevel.toUpperCase()} | #${conversationCount}`;
-            indicator.style.color = expertiseColors[userExpertiseLevel];
+            // Function disabled - no expertise indicator will be displayed
+            return;
         }
 
         // Memory management functions
@@ -1668,9 +1643,6 @@ CHAT_TEMPLATE = """
 
         // Add memory controls to the UI - removed since now in header
         window.addEventListener('load', function() {
-            // Initialize expertise indicator
-            updateExpertiseIndicator();
-            
             // Initialize language (default: English)
             switchLanguage('en');
         });
