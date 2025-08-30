@@ -22,10 +22,13 @@ class DocumentStore:
         self.db_path = db_path
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
         self.init_database()
-        self.vectorizer = TfidfVectorizer(max_features=1000, stop_words='english')
+        self.vectorizer = TfidfVectorizer(max_features=500, stop_words='english')  # Reduced features
         self.document_vectors = None
         self.documents = []
+        self.vector_cache_valid = False  # Track if vectors need rebuilding
         self._load_documents()
+        if self.documents:  # Only build vectors if there are documents
+            self._build_vectors()
     
     def init_database(self):
         """Initialize SQLite database for document storage"""
@@ -91,9 +94,10 @@ class DocumentStore:
         conn.commit()
         conn.close()
         
-        # Reload documents and rebuild vectors
-        self._load_documents()
-        self._build_vectors()
+        # Reload documents and rebuild vectors only if needed
+        if not self.vector_cache_valid:
+            self._load_documents()
+            self._build_vectors()
         
         return doc_id
     
@@ -135,20 +139,27 @@ class DocumentStore:
             })
         
         conn.close()
+        self.vector_cache_valid = False  # Invalidate cache when documents change
     
     def _build_vectors(self):
-        """Build TF-IDF vectors for document similarity search"""
+        """Build TF-IDF vectors for document similarity search with caching"""
         if not self.documents:
             return
+        
+        if self.vector_cache_valid and self.document_vectors is not None:
+            return  # Use cached vectors
         
         # Use chunks for vectorization for better granular search
         chunk_texts = [doc['chunks'] for doc in self.documents]
         
         try:
             self.document_vectors = self.vectorizer.fit_transform(chunk_texts)
+            self.vector_cache_valid = True
+            logging.info(f"Built vectors for {len(self.documents)} documents")
         except Exception as e:
             logging.error(f"Error building document vectors: {e}")
             self.document_vectors = None
+            self.vector_cache_valid = False
     
     def search_documents(self, query: str, top_k: int = 3) -> List[Dict]:
         """Search documents using semantic similarity"""
