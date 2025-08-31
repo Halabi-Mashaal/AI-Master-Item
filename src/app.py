@@ -142,10 +142,20 @@ except ImportError:
     PANDAS_AVAILABLE = False
     logging.warning("Pandas not available, using basic CSV processing")
 
-# Master Data Management - Oracle EBS Integration removed
-# MDM functionality has been disabled by user request
-MDM_AVAILABLE = False
-logging.info("Oracle EBS integration disabled - MDM functionality removed")
+# Master Data Management Guidelines - Oracle Standards (No EBS Integration)
+try:
+    from mdm_guidelines import (
+        validate_item_data, 
+        get_mdm_guidelines, 
+        get_quality_standards,
+        generate_mdm_report,
+        MDMValidationResult
+    )
+    MDM_GUIDELINES_AVAILABLE = True
+    logging.info("Oracle MDM Guidelines loaded - Standards-based validation available")
+except ImportError as e:
+    MDM_GUIDELINES_AVAILABLE = False
+    logging.warning(f"MDM Guidelines not available: {e}")
 
 # Enhanced AI libraries
 try:
@@ -3495,78 +3505,124 @@ def health_check():
             "conversation_memory": "100 prompts",
             "deep_learning": "enabled",
             "session_tracking": "active",
-            "master_data_management": "enabled" if MDM_AVAILABLE else "disabled",
-            "oracle_ebs_integration": "enabled" if MDM_AVAILABLE else "disabled",
+            "master_data_management": "enabled" if MDM_GUIDELINES_AVAILABLE else "disabled",
+            "oracle_ebs_integration": "disabled",
             "advanced_nlp": "enabled" if ADVANCED_NLP_AVAILABLE else ("lightweight" if LIGHTWEIGHT_NLP_AVAILABLE else "disabled")
         }
     })
 
 # Master Data Management API Endpoints
-@app.route('/api/mdm/items', methods=['POST'])
-def create_item():
-    """Create new item with AI validation"""
-    if not MDM_AVAILABLE or not mdm_manager:
-        return jsonify({"error": "MDM functionality not available"}), 503
+@app.route('/api/mdm/validate-item', methods=['POST'])
+def validate_item():
+    """Validate item data against Oracle MDM guidelines"""
+    if not MDM_GUIDELINES_AVAILABLE:
+        return jsonify({"error": "MDM Guidelines not available"}), 503
     
     try:
         data = request.get_json()
-        result = mdm_manager.create_item(data)
-        return jsonify(result)
+        if not data:
+            return jsonify({"error": "No item data provided"}), 400
+            
+        validation_result = validate_item_data(data)
+        
+        return jsonify({
+            "validation_result": {
+                "is_valid": validation_result.is_valid,
+                "score": round(validation_result.score, 2),
+                "compliance_level": validation_result.compliance_level,
+                "issues": validation_result.issues,
+                "recommendations": validation_result.recommendations
+            },
+            "item_data": data,
+            "validated_at": datetime.now().isoformat()
+        })
     except Exception as e:
-        logging.error(f"Error creating item: {e}")
+        logging.error(f"Error validating item: {e}")
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/mdm/suppliers', methods=['POST'])
-def create_supplier():
-    """Create new supplier with AI validation"""
-    if not MDM_AVAILABLE or not mdm_manager:
-        return jsonify({"error": "MDM functionality not available"}), 503
+@app.route('/api/mdm/guidelines', methods=['GET'])
+def get_guidelines():
+    """Get Oracle MDM guidelines and standards"""
+    if not MDM_GUIDELINES_AVAILABLE:
+        return jsonify({"error": "MDM Guidelines not available"}), 503
+    
+    try:
+        guidelines = get_mdm_guidelines()
+        quality_standards = get_quality_standards()
+        
+        return jsonify({
+            "guidelines": guidelines,
+            "quality_standards": quality_standards,
+            "retrieved_at": datetime.now().isoformat()
+        })
+    except Exception as e:
+        logging.error(f"Error getting guidelines: {e}")
+        return jsonify({"error": str(e)}), 500
+@app.route('/api/mdm/bulk-validate', methods=['POST'])
+def bulk_validate_items():
+    """Validate multiple items against Oracle MDM guidelines"""
+    if not MDM_GUIDELINES_AVAILABLE:
+        return jsonify({"error": "MDM Guidelines not available"}), 503
     
     try:
         data = request.get_json()
-        result = mdm_manager.create_supplier(data)
-        return jsonify(result)
+        items = data.get('items', [])
+        
+        if not items:
+            return jsonify({"error": "No items provided for validation"}), 400
+            
+        report = generate_mdm_report(items)
+        return jsonify(report)
+        
     except Exception as e:
-        logging.error(f"Error creating supplier: {e}")
+        logging.error(f"Error in bulk validation: {e}")
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/mdm/customers', methods=['POST'])
-def create_customer():
-    """Create new customer with AI validation"""
-    if not MDM_AVAILABLE or not mdm_manager:
-        return jsonify({"error": "MDM functionality not available"}), 503
+@app.route('/api/mdm/standards', methods=['GET'])
+def get_mdm_standards():
+    """Get MDM data quality standards and rules"""
+    if not MDM_GUIDELINES_AVAILABLE:
+        return jsonify({"error": "MDM Guidelines not available"}), 503
     
     try:
-        data = request.get_json()
-        result = mdm_manager.create_customer(data)
-        return jsonify(result)
+        standards = get_quality_standards()
+        return jsonify({
+            "standards": standards,
+            "retrieved_at": datetime.now().isoformat()
+        })
     except Exception as e:
-        logging.error(f"Error creating customer: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/mdm/search/<entity_type>', methods=['POST'])
-def search_entities(entity_type):
-    """Search master data entities"""
-    if not MDM_AVAILABLE or not mdm_manager:
-        return jsonify({"error": "MDM functionality not available"}), 503
-    
-    try:
-        data = request.get_json()
-        results = mdm_manager.search_entities(entity_type, data)
-        return jsonify({"results": results, "count": len(results)})
-    except Exception as e:
-        logging.error(f"Error searching entities: {e}")
+        logging.error(f"Error getting standards: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/mdm/dashboard', methods=['GET'])
 def mdm_dashboard():
     """Get MDM data quality dashboard"""
-    if not MDM_AVAILABLE or not mdm_manager:
-        return jsonify({"error": "MDM functionality not available"}), 503
+    if not MDM_GUIDELINES_AVAILABLE:
+        return jsonify({"error": "MDM Guidelines not available"}), 503
     
     try:
-        dashboard = mdm_manager.get_data_quality_dashboard()
-        return jsonify(dashboard)
+        dashboard_data = {
+            "guidelines": {
+                "status": "active",
+                "version": "1.0",
+                "last_updated": datetime.now().isoformat()
+            },
+            "validation_standards": {
+                "item_number": "Mandatory, 15 chars max, alphanumeric",
+                "description": "50 chars max, no special characters",
+                "category": "Must match valid categories",
+                "uom": "Standard units required",
+                "attributes": "Complete attribute sets required"
+            },
+            "quality_metrics": {
+                "completeness": "Item attribute completeness scoring",
+                "accuracy": "Data format and validation scoring", 
+                "consistency": "Cross-reference validation scoring"
+            }
+        }
+        
+        return jsonify(dashboard_data)
+        
     except Exception as e:
         logging.error(f"Error getting MDM dashboard: {e}")
         return jsonify({"error": str(e)}), 500
@@ -3574,7 +3630,7 @@ def mdm_dashboard():
 @app.route('/api/mdm/bulk-import', methods=['POST'])
 def bulk_import():
     """Bulk import master data from Excel"""
-    if not MDM_AVAILABLE or not mdm_manager:
+    if not MDM_GUIDELINES_AVAILABLE:
         return jsonify({"error": "MDM functionality not available"}), 503
     
     try:

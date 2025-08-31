@@ -1,12 +1,29 @@
-# Render Deployment Configuration
-
-# Environment Variables
-PYTHON_VERSION=3.11.5
-BUILD_COMMAND=pip install --upgrade pip && pip install -r requirements.txt && python -m spacy download en_core_web_sm
-START_COMMAND=gunicorn --bind 0.0.0.0:$PORT src.app:app --timeout 120 --workers 2
-
-# For manual deployment
-# 1. Set Python version to 3.11.5 in Render dashboard
-# 2. Build command: pip install --upgrade pip && pip install -r requirements.txt && python -m spacy download en_core_web_sm
-# 3. Start command: gunicorn --bind 0.0.0.0:$PORT src.app:app --timeout 120 --workers 2
-# 4. Make sure to set environment variables for any API keys if needed
+services:
+  - type: web
+    name: master-item-ai-agent
+    runtime: python3
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT src.app:app --timeout 120 --workers 1 --max-requests 100
+    plan: free
+    branch: main
+    healthCheckPath: /api/status
+    envVars:
+      - key: USE_LIGHTWEIGHT_NLP
+        value: "1"
+      - key: MEMORY_OPTIMIZED  
+        value: "1"
+      - key: DISABLE_HEAVY_MODELS
+        value: "1"
+      - key: FLASK_ENV
+        value: production
+      - key: WEB_CONCURRENCY
+        value: "1"
+      - key: MAX_WORKERS
+        value: "1"
+      # Add your API keys as secret environment variables in Render Dashboard
+      # - key: OPENAI_API_KEY
+      #   sync: false
+      # - key: GEMINI_API_KEY  
+      #   sync: false
+      # - key: AI_PROVIDER
+      #   value: openai
