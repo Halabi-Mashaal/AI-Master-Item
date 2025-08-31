@@ -1,4 +1,17 @@
 import os
+
+# Load environment variables first (critical for performance)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+    # Set lightweight mode for faster startup
+    os.environ['USE_LIGHTWEIGHT_NLP'] = '1'
+    os.environ['DISABLE_HEAVY_MODELS'] = '1'
+    os.environ['MEMORY_OPTIMIZED'] = '1'
+    print("🚀 Environment variables loaded - Lightweight mode enabled")
+except ImportError:
+    print("⚠️  python-dotenv not available - using default environment")
+
 import logging
 import io
 import base64
