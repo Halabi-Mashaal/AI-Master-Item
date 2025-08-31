@@ -90,6 +90,7 @@ except ImportError:
 
 import numpy as np
 import pandas as pd
+import os
 
 
 class AdvancedNLPProcessor:
@@ -98,6 +99,13 @@ class AdvancedNLPProcessor:
     def __init__(self):
         """Initialize all NLP models and processors"""
         self.logger = logging.getLogger(__name__)
+        
+        # Check for lightweight mode
+        self.use_lightweight_nlp = os.getenv('USE_LIGHTWEIGHT_NLP', '0') == '1'
+        self.disable_heavy_models = os.getenv('DISABLE_HEAVY_MODELS', '0') == '1'
+        
+        if self.use_lightweight_nlp or self.disable_heavy_models:
+            self.logger.info("Lightweight NLP mode enabled - skipping heavy model loading")
         
         # Initialize models
         self.nlp_model = None
@@ -120,6 +128,11 @@ class AdvancedNLPProcessor:
     def _load_models(self):
         """Load all available NLP models"""
         try:
+            # Skip heavy model loading in lightweight mode
+            if self.use_lightweight_nlp or self.disable_heavy_models:
+                self.logger.info("Skipping heavy NLP model loading due to lightweight mode")
+                return
+                
             # Load spaCy model
             if spacy_available:
                 try:
