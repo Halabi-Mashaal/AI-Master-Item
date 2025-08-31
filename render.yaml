@@ -19,6 +19,10 @@ services:
       - key: MAX_WORKERS
         value: "1"
       - key: APP_VERSION
-        value: ultra-fast
+        value: debug-mode
       - key: GOOGLE_API_KEY
+        value: AIzaSyASSS8H6lPc6P6dd6hBtVHhOXCWZV2qxKA
+      - key: GEMINI_API_KEY
+        value: AIzaSyASSS8H6lPc6P6dd6hBtVHhOXCWZV2qxKA
+      - key: GOOGLE_GEMINI_API_KEY
         value: AIzaSyASSS8H6lPc6P6dd6hBtVHhOXCWZV2qxKA

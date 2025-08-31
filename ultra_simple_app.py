@@ -28,7 +28,7 @@ try:
         AI_AVAILABLE = False
     else:
         genai.configure(api_key=GOOGLE_API_KEY)
-        model = genai.GenerativeModel('gemini-pro')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         AI_AVAILABLE = True
         print("🤖 Google Gemini AI loaded successfully")
         print(f"🔑 API Key Status: {'✅ Configured' if len(GOOGLE_API_KEY) > 20 else '❌ Invalid'}")
