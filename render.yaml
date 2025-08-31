@@ -1,14 +1,17 @@
 services:
   - type: web
     name: yamama-warehouse-ai-agent
-    runtime: python
-    pythonVersion: "3.11"
-    buildCommand: pip install --upgrade pip setuptools wheel && pip install -r requirements.txt
+    env: python
+    buildCommand: |
+      python -m pip install --upgrade pip setuptools wheel
+      pip install -r requirements.txt
     startCommand: cd src && gunicorn --bind 0.0.0.0:$PORT app:app --timeout 30 --workers 1 --max-requests 1000
     plan: free
     branch: main
     healthCheckPath: /health
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
       - key: FLASK_ENV
         value: production
       - key: WEB_CONCURRENCY

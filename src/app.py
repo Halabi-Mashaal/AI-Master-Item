@@ -27,8 +27,27 @@ from werkzeug.utils import secure_filename
 import mimetypes
 import csv
 
-# Import RAG System
-from rag_system import DocumentStore, RAGSystem, SessionManager
+# Import RAG System (optional for basic functionality)
+try:
+    from rag_system import DocumentStore, RAGSystem, SessionManager
+    RAG_AVAILABLE = True
+    print("📚 RAG System loaded successfully")
+except ImportError as e:
+    print(f"⚠️  RAG System not available (missing dependencies): {e}")
+    RAG_AVAILABLE = False
+    # Create placeholder classes
+    class DocumentStore:
+        def __init__(self, *args, **kwargs): pass
+        def add_document(self, *args, **kwargs): return True
+        def search(self, *args, **kwargs): return []
+    
+    class RAGSystem:
+        def __init__(self, *args, **kwargs): pass
+        def answer_question(self, *args, **kwargs): return "RAG system not available in lightweight mode"
+    
+    class SessionManager:
+        def __init__(self, *args, **kwargs): pass
+        def get_or_create_session(self, *args, **kwargs): return {"id": "default", "context": []}
 
 # Import Advanced AI Models
 try:
@@ -38,6 +57,37 @@ try:
 except ImportError as e:
     logging.warning(f"Advanced AI not available: {e}")
     ADVANCED_AI_AVAILABLE = False
+    # Create simple fallback AI response using Google Gemini directly
+    try:
+        import google.generativeai as genai
+        
+        # Configure Gemini API
+        GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY', 'AIzaSyASSS8H6lPc6P6dd6hBtVHhOXCWZV2qxKA')
+        genai.configure(api_key=GOOGLE_API_KEY)
+        model = genai.GenerativeModel('gemini-pro')
+        
+        def get_ai_response(message, language='en', context=None):
+            try:
+                # Create prompt with context
+                prompt = f"You are Yamama Cement AI Assistant. Answer in {language}.\n\nUser: {message}\nAssistant:"
+                response = model.generate_content(prompt)
+                return response.text
+            except Exception as e:
+                return f"AI response error: {str(e)}"
+        
+        def analyze_uploaded_file(file_content, filename):
+            return {"analysis": "File analysis not available in lightweight mode", "summary": "Please enable full mode for file analysis"}
+        
+        print("🤖 Basic AI with Google Gemini loaded")
+        
+    except ImportError:
+        def get_ai_response(message, language='en', context=None):
+            return "AI services temporarily unavailable. Please try again later."
+        
+        def analyze_uploaded_file(file_content, filename):
+            return {"analysis": "File analysis unavailable", "summary": "AI services not configured"}
+        
+        print("⚠️  No AI services available")
 
 # Performance optimization: Simple response cache
 class ResponseCache:
