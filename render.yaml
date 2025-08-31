@@ -6,7 +6,7 @@ services:
     startCommand: gunicorn --bind 0.0.0.0:$PORT src.app:app --timeout 120 --workers 1 --max-requests 100
     plan: free
     branch: main
-    healthCheckPath: /api/status
+    healthCheckPath: /api/chat
     envVars:
       - key: USE_LIGHTWEIGHT_NLP
         value: "1"
@@ -20,10 +20,10 @@ services:
         value: "1"
       - key: MAX_WORKERS
         value: "1"
-      # Add your API keys as secret environment variables in Render Dashboard
+      - key: AI_PROVIDER
+        value: gemini
+      - key: GEMINI_API_KEY
+        value: AIzaSyASSS8H6lPc6P6dd6hBtVHhOXCWZV2qxKA
+      # Optional OpenAI API key for fallback
       # - key: OPENAI_API_KEY
       #   sync: false
-      # - key: GEMINI_API_KEY  
-      #   sync: false
-      # - key: AI_PROVIDER
-      #   value: openai
