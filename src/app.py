@@ -6,6 +6,7 @@ import uuid
 import json
 import threading
 import time
+from typing import Dict, List, Any, Optional
 from collections import defaultdict, deque
 from flask import Flask, jsonify, request, render_template_string, session, send_file
 from datetime import datetime, timedelta
@@ -15,6 +16,15 @@ import csv
 
 # Import RAG System
 from rag_system import DocumentStore, RAGSystem, SessionManager
+
+# Import Advanced AI Models
+try:
+    from ai_models import get_ai_response, analyze_uploaded_file, ai_provider
+    ADVANCED_AI_AVAILABLE = True
+    logging.info(f"Advanced AI integration loaded - Provider: {ai_provider.provider}")
+except ImportError as e:
+    logging.warning(f"Advanced AI not available: {e}")
+    ADVANCED_AI_AVAILABLE = False
 
 # Performance optimization: Simple response cache
 class ResponseCache:
@@ -132,14 +142,10 @@ except ImportError:
     PANDAS_AVAILABLE = False
     logging.warning("Pandas not available, using basic CSV processing")
 
-# Master Data Management with Oracle EBS Integration
-try:
-    from mdm_oracle_ebs import initialize_mdm, get_mdm_manager, MasterDataManager
-    MDM_AVAILABLE = True
-    logging.info("Master Data Management (MDM) with Oracle EBS integration loaded")
-except ImportError as e:
-    MDM_AVAILABLE = False
-    logging.warning(f"MDM not available: {e}")
+# Master Data Management - Oracle EBS Integration removed
+# MDM functionality has been disabled by user request
+MDM_AVAILABLE = False
+logging.info("Oracle EBS integration disabled - MDM functionality removed")
 
 # Enhanced AI libraries
 try:
@@ -626,19 +632,10 @@ app.config['SESSION_TYPE'] = 'filesystem'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Initialize Master Data Management
-if MDM_AVAILABLE:
-    oracle_config = {
-        'host': os.environ.get('ORACLE_HOST', 'localhost'),
-        'port': os.environ.get('ORACLE_PORT', '1521'),
-        'service_name': os.environ.get('ORACLE_SERVICE', 'ORCL'),
-        'username': os.environ.get('ORACLE_USER', 'apps'),
-        'password': os.environ.get('ORACLE_PASSWORD', 'apps')
-    }
-    mdm_manager = initialize_mdm(oracle_config)
-    logging.info("MDM Manager initialized with Oracle EBS configuration")
-else:
-    mdm_manager = None
-    logging.warning("MDM Manager not available - master data features disabled")
+# Oracle EBS integration removed by user request
+# No MDM functionality available
+mdm_manager = None
+logging.info("Oracle EBS and MDM functionality permanently disabled")
 
 logging.basicConfig(level=logging.INFO)
 
@@ -1183,12 +1180,12 @@ CHAT_TEMPLATE = """
                         <br>• Extract insights from documents, images, PDFs, and Word files
                         <br>• Interactive data visualization and automated reporting
                         <br><br>
-                        <strong>🏢 Master Data Management (MDM):</strong>
-                        <br>• Create and manage items, suppliers, and customers
-                        <br>• Oracle EBS integration with real-time synchronization
-                        <br>• AI-powered data quality assessment and validation
-                        <br>• Bulk Excel import/export with intelligent field mapping
-                        <br>• Duplicate detection and data standardization
+                        <strong>🏢 AI-Powered Analysis:</strong>
+                        <br>• Advanced OpenAI and Gemini integration
+                        <br>• Contextual conversation capabilities
+                        <br>• Intelligent file content analysis
+                        <br>• Smart data processing and insights
+                        <br>• Natural language understanding
                         <br>• Comprehensive audit trails and change management
                         <br><br>
                         <strong>🧠 Advanced AI & NLP:</strong>
@@ -1215,11 +1212,11 @@ CHAT_TEMPLATE = """
                         <br>• Comparative analysis across periods and categories
                         <br>• Automated business reporting in multiple formats
                         <br><br>
-                        <strong>🔄 Enterprise Integration:</strong>
-                        <br>• Oracle EBS modules integration (Financials, Procurement, Inventory)
-                        <br>• REST API endpoints for system-to-system connectivity
-                        <br>• Real-time data synchronization with audit logging
-                        <br>• Workflow automation and approval processes
+                        <strong>🔄 Modern Integration:</strong>
+                        <br>• REST API endpoints for system connectivity
+                        <br>• Real-time AI processing capabilities
+                        <br>• Advanced file processing and analysis
+                        <br>• Multi-language support (Arabic/English)
                         <br>• Multi-tenant support for enterprise deployment
                         <br><br>
                         <strong>🌐 Multi-Language & Industry Support:</strong>
@@ -2039,11 +2036,22 @@ def chat():
                 context['rag_enhanced'] = True
                 context['relevant_docs_count'] = len(relevant_docs)
         
-        # Generate enhanced response with RAG context
+        # Generate enhanced response with Advanced AI or RAG context
         if file_analysis:
-            response = generate_enhanced_file_response_with_rag(file_analysis, user_message, context, conversation_history, user_profile, user_language, rag_context)
+            # For file uploads, use AI for intelligent analysis
+            file_content_for_ai = file_analysis if ADVANCED_AI_AVAILABLE else ""
+            if ADVANCED_AI_AVAILABLE:
+                response = generate_ai_response(user_message or "Please analyze this file", context, file_content_for_ai, user_language)
+            else:
+                response = generate_enhanced_file_response_with_rag(file_analysis, user_message, context, conversation_history, user_profile, user_language, rag_context)
         else:
-            response = generate_text_response_with_rag_memory(user_message, context, conversation_history, user_profile, user_language, nlp_analysis, rag_context, relevant_docs)
+            # For text conversations, use AI for better contextual responses
+            if ADVANCED_AI_AVAILABLE:
+                # Add conversation history to context for AI
+                context['conversation_history'] = conversation_history
+                response = generate_ai_response(user_message, context, rag_context, user_language)
+            else:
+                response = generate_text_response_with_rag_memory(user_message, context, conversation_history, user_profile, user_language, nlp_analysis, rag_context, relevant_docs)
         
         # Update conversation history
         conversation_entry = {
@@ -2220,7 +2228,7 @@ def generate_text_response_with_memory(user_message, context, history, user_prof
         if language == 'ar':
             return "مرحباً بكم! كيف يمكنني مساعدتكم اليوم؟"
         else:
-            return "Hello! I'm your Warehouse Yamama AI Agent with advanced data analysis, Master Data Management, and Oracle EBS integration capabilities. How can I help you today?"
+            return "Hello! I'm your Warehouse Yamama AI Agent with advanced AI-powered data analysis and intelligent file processing capabilities. How can I help you today?"
     
     # Handle help requests more naturally
     if any(help_phrase in user_lower for help_phrase in ['how can you help', 'what can you do', 'help me', 'كيف يمكنك مساعدتي', 'ماذا يمكنك أن تفعل', 'ما هي خدماتك', 'how can you help me']):
@@ -2252,12 +2260,12 @@ def generate_text_response_with_memory(user_message, context, history, user_prof
    • Interactive data visualization and automated reporting
    • Extract insights from documents and images
 
-2. **🏢 Master Data Management (MDM):**
-   • Create and manage items, suppliers, customers
-   • Oracle EBS real-time integration and synchronization
-   • AI-powered data quality assessment and validation
-   • Bulk Excel import/export with intelligent mapping
-   • Duplicate detection and data standardization
+2. **🏢 Advanced File Processing:**
+   • AI-powered file analysis and insights
+   • Excel, CSV, Word, and PDF processing
+   • Intelligent data extraction and validation
+   • Bulk processing with automated reporting
+   • Pattern recognition and anomaly detection
 
 3. **📦 Inventory & Supply Chain:**
    • ABC analysis and intelligent inventory classification
@@ -2273,11 +2281,12 @@ def generate_text_response_with_memory(user_message, context, history, user_prof
    • Supply chain risk assessment and mitigation
    • Automated business reporting in multiple formats
 
-5. **🔄 Enterprise Integration:**
-   • Oracle EBS modules (Financials, Procurement, Inventory)
-   • REST API endpoints for system connectivity
-   • Workflow automation and approval processes
-   • Comprehensive audit trails and change management
+5. **🔄 AI Integration:**
+   • OpenAI GPT and Google Gemini support
+   • Contextual conversation capabilities
+   • Intelligent response generation
+   • Advanced natural language processing
+   • Smart file content analysis
 
 6. **🌐 Multi-Language & Industry Support:**
    • Full Arabic/English support with cultural awareness
@@ -2381,8 +2390,8 @@ def generate_text_response_with_memory(user_message, context, history, user_prof
         insights = deep_learning_engine.analyze_patterns(sample_inventory)
         response += f"\n\n🤖 **Deep Learning Analysis:** Inventory volatility: {insights.get('volatility', 0):.1f}, Trend: {insights.get('trend', 'stable')}"
     
-    # Master Data Management queries
-    elif (MDM_AVAILABLE and any(term in user_lower for term in ['mdm', 'master data', 'item', 'supplier', 'customer', 'oracle ebs', 'data quality', 'بيانات رئيسية', 'صنف', 'مورد', 'عميل', 'جودة البيانات'])):
+    # Master Data Management queries - DISABLED (Oracle EBS integration removed)
+    elif False:  # MDM functionality removed by user request
         if language == 'ar':
             response = f"""{memory_prefix}
 
@@ -2505,17 +2514,17 @@ Hello! How can I help you today?
 
 **📊 Core Services:**
 • AI-powered data analysis and file processing (CSV, Excel, PDF, Word)
-• Master Data Management with Oracle EBS integration
-• Inventory management and supply chain optimization
+• Advanced AI integration with OpenAI and Gemini
+• Intelligent document analysis and insights generation
 • Advanced demand forecasting and financial predictions
 • Real-time performance analysis and automated reporting
 
-**🏢 Master Data Management:**
-• Create and manage items, suppliers, customers
-• Oracle EBS real-time synchronization with fallback modes
-• AI data quality assessment (94%+ accuracy)
-• Bulk Excel import/export with intelligent mapping
-• Duplicate detection and data standardization
+**🤖 Advanced AI Features:**
+• OpenAI GPT and Google Gemini integration
+• Contextual conversation memory
+• Intelligent file content analysis
+• Natural language processing capabilities
+• Smart pattern recognition and insights
 
 **🧠 Advanced AI Capabilities:**
 • Conversational memory ({conversation_count} interactions)
@@ -2524,11 +2533,11 @@ Hello! How can I help you today?
 • Personalized recommendations for {expertise_level} level
 • Natural language processing with intent recognition
 
-**🔄 Enterprise Integration:**
+**🔄 System Integration:**
 • REST API endpoints for system connectivity
-• Oracle EBS modules integration (Financials, Procurement, Inventory)
-• Workflow automation and approval processes
-• Comprehensive audit trails and change management
+• Advanced AI model integration (OpenAI/Gemini)
+• Real-time processing and analysis
+• Multi-format file support and processing
 
 **❓ What I Can Help You With:**
 • Analyze data files and generate insights
@@ -2933,6 +2942,24 @@ def analyze_files_lightweight(files):
         analysis_results.append(analysis)
     
     return "\n\n".join(analysis_results)
+
+def generate_ai_response(user_message: str, context: Dict, file_content: str = "", language: str = "en") -> str:
+    """Generate intelligent response using OpenAI/Gemini or fallback"""
+    
+    if ADVANCED_AI_AVAILABLE:
+        try:
+            # Use the AI provider for better responses
+            if file_content:
+                # For file analysis
+                return analyze_uploaded_file(file_content, context.get('filename', 'uploaded_file'), user_message)
+            else:
+                # For general conversation
+                return get_ai_response(user_message, context)
+        except Exception as e:
+            logging.error(f"Advanced AI failed, using fallback: {e}")
+    
+    # Fallback to basic response generation
+    return generate_text_response_with_rag_memory(user_message, context, [], {}, language)
 
 def analyze_files(files):
     """Advanced analysis of uploaded files with cement industry-specific insights"""
