@@ -22,12 +22,3 @@ services:
         value: ultra-fast
       - key: GOOGLE_API_KEY
         value: AIzaSyASSS8H6lPc6P6dd6hBtVHhOXCWZV2qxKA
-    envVars:
-      - key: FLASK_ENV
-        value: production
-      - key: WEB_CONCURRENCY
-        value: "1"
-      - key: MAX_WORKERS
-        value: "1"
-      - key: APP_VERSION
-        value: ultra-fast

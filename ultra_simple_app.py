@@ -22,14 +22,23 @@ try:
     
     # Configure Gemini API
     GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY', 'AIzaSyASSS8H6lPc6P6dd6hBtVHhOXCWZV2qxKA')
-    genai.configure(api_key=GOOGLE_API_KEY)
-    model = genai.GenerativeModel('gemini-pro')
-    AI_AVAILABLE = True
-    print("🤖 Google Gemini AI loaded successfully")
     
+    if not GOOGLE_API_KEY or GOOGLE_API_KEY == 'your-api-key-here':
+        print("❌ Google API Key not found or not properly set")
+        AI_AVAILABLE = False
+    else:
+        genai.configure(api_key=GOOGLE_API_KEY)
+        model = genai.GenerativeModel('gemini-pro')
+        AI_AVAILABLE = True
+        print("🤖 Google Gemini AI loaded successfully")
+        print(f"🔑 API Key Status: {'✅ Configured' if len(GOOGLE_API_KEY) > 20 else '❌ Invalid'}")
+    
+except ImportError as e:
+    AI_AVAILABLE = False
+    print(f"❌ Google Generative AI library not installed: {e}")
 except Exception as e:
     AI_AVAILABLE = False
-    print(f"⚠️  AI not available: {e}")
+    print(f"⚠️  AI initialization error: {e}")
 
 def get_ai_response(message, language='en'):
     """Get AI response using Google Gemini"""
@@ -39,6 +48,14 @@ def get_ai_response(message, language='en'):
         return "AI services are temporarily unavailable. Please try again later."
     
     try:
+        # Check if API key is available
+        api_key = os.getenv('GOOGLE_API_KEY', 'AIzaSyASSS8H6lPc6P6dd6hBtVHhOXCWZV2qxKA')
+        if not api_key or api_key == 'your-api-key-here':
+            logging.error("Google API Key not properly configured")
+            if language == 'ar':
+                return "⚠️ مفتاح API غير مكوّن بشكل صحيح. يرجى التواصل مع المطور."
+            return "⚠️ API Key not properly configured. Please contact the developer."
+        
         # Create context-aware prompt
         if language == 'ar':
             system_prompt = """أنت مساعد ذكي لشركة أسمنت اليمامة السعودية. أجب باللغة العربية وكن مفيداً ومهنياً.
@@ -58,14 +75,30 @@ Your expertise includes:
         full_prompt = f"{system_prompt}\n\nUser: {message}\nAssistant:"
         
         response = model.generate_content(full_prompt)
-        return response.text
+        
+        if response and response.text:
+            return response.text
+        else:
+            logging.error("Empty response from Gemini API")
+            if language == 'ar':
+                return "⚠️ لم يتم الحصول على رد من النظام. يرجى المحاولة مرة أخرى."
+            return "⚠️ No response received from the system. Please try again."
         
     except Exception as e:
-        logging.error(f"AI response error: {e}")
-        if language == 'ar':
-            return "عذراً، حدث خطأ في النظام. يرجى المحاولة مرة أخرى."
+        logging.error(f"AI response error: {str(e)} | Type: {type(e).__name__}")
+        if "API_KEY" in str(e).upper() or "authentication" in str(e).lower():
+            if language == 'ar':
+                return "⚠️ خطأ في المصادقة مع Google Gemini. يرجى التحقق من مفتاح API."
+            return "⚠️ Authentication error with Google Gemini. Please check API key."
+        elif "quota" in str(e).lower() or "limit" in str(e).lower():
+            if language == 'ar':
+                return "⚠️ تم الوصول إلى الحد الأقصى للاستخدام. يرجى المحاولة لاحقاً."
+            return "⚠️ Usage limit reached. Please try again later."
         else:
-            return "I apologize, there was a system error. Please try again."
+            if language == 'ar':
+                return f"عذراً، حدث خطأ في النظام: {str(e)}. يرجى المحاولة مرة أخرى."
+            else:
+                return f"I apologize, there was a system error: {str(e)}. Please try again."
 
 # HTML Template for the web interface
 HTML_TEMPLATE = '''
