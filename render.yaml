@@ -5,7 +5,7 @@ services:
     buildCommand: |
       python -m pip install --upgrade pip setuptools wheel
       pip install -r requirements.txt
-    startCommand: cd src && gunicorn --bind 0.0.0.0:$PORT app:app --timeout 30 --workers 1 --max-requests 1000
+    startCommand: gunicorn --bind 0.0.0.0:$PORT ultra_simple_app:app --timeout 30 --workers 1 --max-requests 1000
     plan: free
     branch: main
     healthCheckPath: /health

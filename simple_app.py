@@ -1,54 +1,69 @@
 #!/usr/bin/env python3
 """
-Simple Yamama Warehouse AI Agent
-Minimal version without heavy dependencies
+Ultra-Lightweight Yamama Cement AI Agent for Render Deployment
 """
 import os
 import json
+import time
 import logging
-from flask import Flask, request, jsonify, render_template_string
+from flask import Flask, jsonify, request, render_template_string, send_from_directory
 from datetime import datetime
 
-# Set up logging
+# Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # Initialize Flask app
 app = Flask(__name__)
-app.secret_key = 'yamama-cement-ai-agent-2025'
+app.secret_key = os.urandom(24)
 
-# Simple AI Response System
-class SimpleAI:
-    def __init__(self):
-        self.responses = {
-            "hello": "مرحباً بك في وكيل الذكاء الاصطناعي لشركة يمامة للأسمنت! كيف يمكنني مساعدتك اليوم؟",
-            "help": "يمكنني مساعدتك في تحليل العناصر، والتحقق من إرشادات MDM، وتحسين عمليات المستودع.",
-            "status": "النظام يعمل بشكل طبيعي ✅",
-            "ar": "أهلاً وسهلاً! أنا مساعد ذكي لإدارة المستودعات في شركة يمامة للأسمنت.",
-        }
+# Google Gemini AI Integration
+try:
+    import google.generativeai as genai
     
-    def get_response(self, message, language="ar"):
-        """Get AI response"""
-        message_lower = message.lower()
+    # Configure Gemini API
+    GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY', 'AIzaSyASSS8H6lPc6P6dd6hBtVHhOXCWZV2qxKA')
+    genai.configure(api_key=GOOGLE_API_KEY)
+    model = genai.GenerativeModel('gemini-pro')
+    AI_AVAILABLE = True
+    print("🤖 Google Gemini AI loaded successfully")
+    
+except Exception as e:
+    AI_AVAILABLE = False
+    print(f"⚠️  AI not available: {e}")
+
+def get_ai_response(message, language='en'):
+    """Get AI response using Google Gemini"""
+    if not AI_AVAILABLE:
+        return "AI services are temporarily unavailable. Please try again later."
+    
+    try:
+        # Create context-aware prompt
+        if language == 'ar':
+            system_prompt = """أنت مساعد ذكي لشركة أسمنت اليمامة السعودية. أجب باللغة العربية وكن مفيداً ومهنياً.
+تخصصك في:
+- إدارة المستودعات والمخزون
+- صناعة الأسمنت والمواد البناء
+- تحليل البيانات والتقارير
+- تحسين العمليات التشغيلية"""
+        else:
+            system_prompt = """You are an intelligent assistant for Yamama Cement Company. Be helpful and professional.
+Your expertise includes:
+- Warehouse and inventory management
+- Cement industry and construction materials
+- Data analysis and reporting  
+- Operations optimization"""
         
-        # Simple keyword matching
-        for key, response in self.responses.items():
-            if key in message_lower:
-                return {
-                    "response": response,
-                    "provider": "simple_ai",
-                    "language": language,
-                    "timestamp": datetime.now().isoformat()
-                }
+        full_prompt = f"{system_prompt}\n\nUser: {message}\nAssistant:"
         
-        # Default response
-        if language == "ar":
-            return {
-                "response": "شكراً لك على رسالتك. أنا هنا لمساعدتك في إدارة المستودع وتحليل العناصر. هل يمكنك توضيح طلبك أكثر؟",
-                "provider": "simple_ai",
-                "language": "ar",
-                "timestamp": datetime.now().isoformat()
-            }
+        response = model.generate_content(full_prompt)
+        return response.text
+        
+    except Exception as e:
+        logging.error(f"AI response error: {e}")
+        if language == 'ar':
+            return "عذراً، حدث خطأ في النظام. يرجى المحاولة مرة أخرى."
+        else:
+            return "I apologize, there was a system error. Please try again."
         else:
             return {
                 "response": "Thank you for your message. I'm here to help with warehouse management and item analysis. Could you please clarify your request?",
