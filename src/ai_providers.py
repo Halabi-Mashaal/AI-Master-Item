@@ -51,7 +51,7 @@ class AdvancedAIProvider:
             if gemini_key and gemini_key != 'your_gemini_api_key_here':
                 try:
                     genai.configure(api_key=gemini_key)
-                    self.gemini_model = genai.GenerativeModel('gemini-pro')
+                    self.gemini_model = genai.GenerativeModel('gemini-1.5-flash')
                     if self.provider != 'openai':  # Only set if OpenAI wasn't already set
                         self.provider = 'gemini'
                     logging.info("Gemini model initialized successfully")
