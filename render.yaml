@@ -1,12 +1,12 @@
 services:
   - type: web
-    name: yamama-ai-v3
+    name: yamama-ai-debug-ultimate
     env: python
     buildCommand: |
       python -m pip install --upgrade pip setuptools wheel
       pip install -r requirements.txt
-      echo "CACHE BUST v3.0 - $(date)"
-    startCommand: gunicorn --bind 0.0.0.0:$PORT yamama_ai_v3:app --timeout 30 --workers 1 --max-requests 1000 --preload
+      echo "CACHE BUST MINIMAL TEST - $(date)"
+    startCommand: gunicorn --bind 0.0.0.0:$PORT render_debug_app:app --timeout 30 --workers 1 --max-requests 1000 --preload
     plan: free
     branch: main
     healthCheckPath: /health
@@ -20,10 +20,6 @@ services:
       - key: MAX_WORKERS
         value: "1"
       - key: APP_VERSION
-        value: v3.0-fresh-deploy
+        value: debug-ultimate-troubleshooting
       - key: GOOGLE_API_KEY
-        value: AIzaSyASSS8H6lPc6P6dd6hBtVHhOXCWZV2qxKA
-      - key: GEMINI_API_KEY
-        value: AIzaSyASSS8H6lPc6P6dd6hBtVHhOXCWZV2qxKA
-      - key: GOOGLE_GEMINI_API_KEY
         value: AIzaSyASSS8H6lPc6P6dd6hBtVHhOXCWZV2qxKA
