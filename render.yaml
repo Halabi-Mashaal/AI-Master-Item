@@ -5,7 +5,7 @@ services:
     buildCommand: |
       python -m pip install --upgrade pip setuptools wheel
       pip install -r requirements.txt
-    startCommand: gunicorn --bind 0.0.0.0:$PORT ultra_simple_app:app --timeout 30 --workers 1 --max-requests 1000
+    startCommand: gunicorn --bind 0.0.0.0:$PORT final_fixed_app:app --timeout 30 --workers 1 --max-requests 1000 --preload
     plan: free
     branch: main
     healthCheckPath: /health
@@ -19,7 +19,7 @@ services:
       - key: MAX_WORKERS
         value: "1"
       - key: APP_VERSION
-        value: debug-mode
+        value: final-fixed-v2
       - key: GOOGLE_API_KEY
         value: AIzaSyASSS8H6lPc6P6dd6hBtVHhOXCWZV2qxKA
       - key: GEMINI_API_KEY
