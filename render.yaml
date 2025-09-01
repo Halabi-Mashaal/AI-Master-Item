@@ -5,7 +5,7 @@ services:
     buildCommand: |
       python -m pip install --upgrade pip setuptools wheel
       pip install -r requirements.txt
-      echo "CACHE BUST MINIMAL TEST - $(date)"
+      echo "🔍 ULTIMATE DEBUG DEPLOYMENT - $(date)"
     startCommand: gunicorn --bind 0.0.0.0:$PORT render_debug_app:app --timeout 30 --workers 1 --max-requests 1000 --preload
     plan: free
     branch: main
