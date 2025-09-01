@@ -1,25 +1,9 @@
 services:
   - type: web
-    name: yamama-ai-debug-ultimate
+    name: yamama-cement-final
     env: python
-    buildCommand: |
-      python -m pip install --upgrade pip setuptools wheel
-      pip install -r requirements.txt
-      echo "🔍 ULTIMATE DEBUG DEPLOYMENT - $(date)"
-    startCommand: gunicorn --bind 0.0.0.0:$PORT render_debug_app:app --timeout 30 --workers 1 --max-requests 1000 --preload
+    buildCommand: pip install flask google-generativeai gunicorn
+    startCommand: gunicorn --bind 0.0.0.0:$PORT FINAL_WORKING_APP:app
     plan: free
     branch: main
     healthCheckPath: /health
-    envVars:
-      - key: PYTHON_VERSION
-        value: "3.11"
-      - key: FLASK_ENV
-        value: production
-      - key: WEB_CONCURRENCY
-        value: "1"
-      - key: MAX_WORKERS
-        value: "1"
-      - key: APP_VERSION
-        value: debug-ultimate-troubleshooting
-      - key: GOOGLE_API_KEY
-        value: AIzaSyASSS8H6lPc6P6dd6hBtVHhOXCWZV2qxKA
