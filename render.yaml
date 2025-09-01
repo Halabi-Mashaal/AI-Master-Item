@@ -1,11 +1,12 @@
 services:
   - type: web
-    name: yamama-warehouse-ai-agent
+    name: yamama-ai-v3
     env: python
     buildCommand: |
       python -m pip install --upgrade pip setuptools wheel
       pip install -r requirements.txt
-    startCommand: gunicorn --bind 0.0.0.0:$PORT final_fixed_app:app --timeout 30 --workers 1 --max-requests 1000 --preload
+      echo "CACHE BUST v3.0 - $(date)"
+    startCommand: gunicorn --bind 0.0.0.0:$PORT yamama_ai_v3:app --timeout 30 --workers 1 --max-requests 1000 --preload
     plan: free
     branch: main
     healthCheckPath: /health
@@ -19,7 +20,7 @@ services:
       - key: MAX_WORKERS
         value: "1"
       - key: APP_VERSION
-        value: final-fixed-v2
+        value: v3.0-fresh-deploy
       - key: GOOGLE_API_KEY
         value: AIzaSyASSS8H6lPc6P6dd6hBtVHhOXCWZV2qxKA
       - key: GEMINI_API_KEY
