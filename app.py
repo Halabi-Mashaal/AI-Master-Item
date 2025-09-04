@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Yamama Cement AI Agent - Production Ready
+Yamama Cement AI Agent - Bulletproof Render Version
 """
-from flask import Flask, jsonify, request, render_template_string
+from flask import Flask, jsonify, request
 import os
 
 app = Flask(__name__)
@@ -71,7 +71,7 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
 
 @app.route('/')
 def home():
-    return render_template_string(HTML_TEMPLATE)
+    return HTML_TEMPLATE
 
 @app.route('/health')
 def health():
@@ -81,17 +81,36 @@ def health():
         'version': '1.0'
     })
 
+@app.route('/test')
+def test():
+    return jsonify({
+        'message': 'Yamama AI is working!',
+        'status': 'success',
+        'arabic': 'يمامة للأسمنت يعمل بشكل ممتاز!'
+    })
+
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
-        data = request.get_json()
-        if not data or 'message' not in data:
+        # Handle both JSON and form data
+        if request.is_json:
+            data = request.get_json()
+        else:
+            data = request.form.to_dict()
+            
+        if not data:
             return jsonify({
                 'response': 'لم يتم استلام رسالة - No message received',
                 'status': 'error'
             })
         
-        message = data.get('message', '').lower().strip()
+        message = str(data.get('message', '')).lower().strip()
+        
+        if not message:
+            return jsonify({
+                'response': 'الرسالة فارغة - Empty message',
+                'status': 'error'
+            })
         
         # Simple keyword matching
         if any(word in message for word in ['hello', 'hi', 'مرحب', 'السلام']):
@@ -109,10 +128,11 @@ def chat():
         })
         
     except Exception as e:
+        # Return a simple error response
         return jsonify({
-            'response': 'عذراً، حدث خطأ في النظام - Sorry, system error occurred',
+            'response': f'خطأ في النظام - System error: {str(e)}',
             'status': 'error'
-        })
+        }), 500
 
 if __name__ == '__main__':
     print("🚀 YAMAMA CEMENT AI - STARTING...")
