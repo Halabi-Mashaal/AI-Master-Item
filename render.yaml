@@ -7,3 +7,14 @@ services:
     plan: free
     branch: main
     healthCheckPath: /health
+    envVars:
+      - key: API_URL
+        value: https://yamama-cement-final.onrender.com
+      - key: BASE_URL
+        value: https://yamama-cement-final.onrender.com
+      - key: YAMAMA_AI_API_URL
+        value: https://yamama-cement-final.onrender.com
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHONPATH
+        value: .

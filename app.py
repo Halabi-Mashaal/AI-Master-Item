@@ -14,6 +14,20 @@ import json
 app = Flask(__name__)
 
 # ===============================
+# ENVIRONMENT CONFIGURATION
+# ===============================
+
+# API Configuration
+API_URL = os.environ.get('API_URL', 'https://yamama-cement-final.onrender.com')
+BASE_URL = os.environ.get('BASE_URL', 'https://yamama-cement-final.onrender.com')
+YAMAMA_AI_API_URL = os.environ.get('YAMAMA_AI_API_URL', 'https://yamama-cement-final.onrender.com')
+
+# Flask Configuration
+app.config['API_URL'] = API_URL
+app.config['BASE_URL'] = BASE_URL
+app.config['YAMAMA_AI_API_URL'] = YAMAMA_AI_API_URL
+
+# ===============================
 # ENHANCED MULTI-AGENT SYSTEM
 # ===============================
 
@@ -572,6 +586,19 @@ def get_history():
     return jsonify({
         'history': warehouse_orchestrator.conversation_history[-10:],  # Last 10 conversations
         'total_conversations': len(warehouse_orchestrator.conversation_history)
+    })
+
+@app.route('/config')
+def get_config():
+    """Get API configuration and environment variables"""
+    return jsonify({
+        'api_url': API_URL,
+        'base_url': BASE_URL,
+        'yamama_ai_api_url': YAMAMA_AI_API_URL,
+        'environment': os.environ.get('FLASK_ENV', 'development'),
+        'deployment_platform': 'Render.com',
+        'service_name': 'yamama-cement-final',
+        'status': 'Environment variables configured ✅'
     })
 
 if __name__ == '__main__':
