@@ -3,10 +3,10 @@ services:
     name: yamama-cement-final
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --bind 0.0.0.0:$PORT app:app
+    startCommand: python app.py
     plan: free
     branch: main
-    healthCheckPath: /health
+    healthCheckPath: /
     envVars:
       - key: API_URL
         value: https://yamama-cement-final.onrender.com
