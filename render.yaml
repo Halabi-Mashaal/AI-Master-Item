@@ -19,4 +19,4 @@ services:
       - key: PYTHONPATH
         value: .
       - key: GOOGLE_API_KEY
-        sync: false
+        value: AIzaSyASSS8H6lPc6P6dd6hBtVHhOXCWZV2qxKA

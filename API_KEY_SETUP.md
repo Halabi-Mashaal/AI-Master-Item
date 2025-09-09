@@ -22,7 +22,7 @@
 4. Click **Add Environment Variable**
 5. Set:
    - **Key**: `GOOGLE_API_KEY`
-   - **Value**: `your_api_key_here` (paste your actual key)
+   - **Value**: `AIzaSyASSS8H6lPc6P6dd6hBtVHhOXCWZV2qxKA` ✅ **CONFIGURED**
 6. Click **Save Changes**
 
 #### 3. Verify Setup
