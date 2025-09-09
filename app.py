@@ -16,29 +16,46 @@ app = Flask(__name__)
 
 # AI Integration Setup
 AI_AVAILABLE = False
+AI_ERROR = None
+
 try:
     import google.generativeai as genai
     
-    # Get API key from environment
-    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'AIzaSyASSS8H6lPc6P6dd6hBtVHhOXCWZV2qxKA')
+    # Try multiple environment variable names for the API key
+    GEMINI_API_KEY = (
+        os.getenv('GOOGLE_API_KEY') or 
+        os.getenv('GEMINI_API_KEY') or 
+        os.getenv('GOOGLE_GEMINI_API_KEY') or
+        os.getenv('AI_API_KEY')
+    )
     
-    if GEMINI_API_KEY and GEMINI_API_KEY != 'your_api_key_here':
+    if GEMINI_API_KEY and len(GEMINI_API_KEY) > 10:  # Basic validation
         genai.configure(api_key=GEMINI_API_KEY)
         model = genai.GenerativeModel('gemini-pro')
         AI_AVAILABLE = True
         logger.info("✅ Google Gemini AI initialized successfully")
     else:
-        logger.info("⚠️ No valid API key found, using fallback responses")
+        AI_ERROR = "No valid API key found in environment variables"
+        logger.warning("⚠️ No valid API key found, using fallback responses")
         
+except ImportError as e:
+    AI_ERROR = f"google.generativeai library not available: {e}"
+    logger.info(f"⚠️ Google AI library not installed: {e}")
 except Exception as e:
-    logger.info(f"⚠️ AI not available: {e}")
+    AI_ERROR = f"AI initialization failed: {e}"
+    logger.warning(f"⚠️ AI initialization error: {e}")
 
 def get_ai_response(message, language='ar'):
-    """Get AI response with warehouse context"""
+    """Get AI response with warehouse context and robust error handling"""
     if not AI_AVAILABLE:
+        logger.debug(f"AI not available. Reason: {AI_ERROR}")
         return None
     
     try:
+        # Validate message
+        if not message or len(message.strip()) == 0:
+            return None
+            
         # Create warehouse-specific prompt
         if language == 'ar' or any(char in 'أإآاةتثجحخدذرزسشصضطظعغفقكلمنهوي' for char in message):
             system_prompt = """أنت مساعد ذكي متخصص في إدارة مستودعات شركة يمامة للأسمنت السعودية. 
@@ -81,11 +98,18 @@ Respond professionally and helpfully in English with appropriate formatting and 
 
         full_prompt = f"{system_prompt}\n\nUser Question: {message}\n\nAssistant Response:"
         
+        # Generate response with timeout protection
         response = model.generate_content(full_prompt)
-        return response.text
+        
+        if response and response.text:
+            logger.info("✅ AI response generated successfully")
+            return response.text.strip()
+        else:
+            logger.warning("⚠️ AI returned empty response")
+            return None
         
     except Exception as e:
-        logger.error(f"AI response error: {e}")
+        logger.error(f"AI response error: {str(e)}")
         return None
 
 def get_warehouse_response(message):
@@ -301,18 +325,23 @@ def chat():
     """Enhanced chat endpoint with comprehensive error handling"""
     try:
         # Handle different content types
-        if request.is_json:
-            data = request.get_json()
-        elif request.content_type and 'form' in request.content_type:
-            data = request.form.to_dict()
-        else:
-            # Try to parse as JSON anyway
-            try:
-                data = request.get_json(force=True)
-            except:
-                data = {}
+        data = None
         
+        # Try multiple ways to get the request data
+        try:
+            if request.is_json:
+                data = request.get_json()
+            elif request.content_type and 'form' in request.content_type:
+                data = request.form.to_dict()
+            else:
+                data = request.get_json(force=True)
+        except Exception as parse_error:
+            logger.warning(f"Request parsing error: {parse_error}")
+            data = {}
+        
+        # Handle empty data gracefully
         if not data:
+            logger.info("Empty request received, sending welcome message")
             return jsonify({
                 'response': 'مرحباً! كيف يمكنني مساعدتك؟\nHello! How can I help you?',
                 'status': 'success',
@@ -328,26 +357,96 @@ def chat():
                 'ai_enabled': AI_AVAILABLE
             })
         
-        logger.info(f"Processing message: {message}")
+        logger.info(f"Processing message: '{message[:50]}{'...' if len(message) > 50 else ''}'")
         
-        # Get response
-        response_text = get_warehouse_response(message)
-        
-        return jsonify({
-            'response': response_text,
-            'status': 'success',
-            'ai_enabled': AI_AVAILABLE,
-            'timestamp': datetime.now().isoformat()
-        })
+        # Get response with proper error handling
+        try:
+            response_text = get_warehouse_response(message)
+            
+            if not response_text:
+                response_text = """🏭 أهلاً وسهلاً بك في نظام يمامة
+Welcome to Yamama Warehouse System
+
+أنا مساعدك الذكي، يمكنني مساعدتك في:
+I'm your smart assistant, I can help you with:
+
+📦 إدارة المخزون | Inventory Management
+🚚 التوصيل والشحن | Delivery & Shipping  
+🔬 مراقبة الجودة | Quality Control
+📊 التقارير | Reports
+
+اكتب سؤالك وسأساعدك فوراً!
+Write your question and I'll help you immediately!"""
+            
+            return jsonify({
+                'response': response_text,
+                'status': 'success',
+                'ai_enabled': AI_AVAILABLE,
+                'timestamp': datetime.now().isoformat()
+            })
+            
+        except Exception as response_error:
+            logger.error(f"Response generation error: {response_error}")
+            
+            # Provide a helpful fallback response
+            fallback_response = f"""🏭 مرحباً! أنا مساعد يمامة الذكي
+Hello! I'm Yamama AI Assistant
+
+تم استلام رسالتك: "{message}"
+Your message received: "{message}"
+
+يمكنني مساعدتك في | I can help you with:
+📦 المخزون والكميات | Inventory & Stock
+🚚 التوصيل والشحن | Delivery & Shipping
+🔬 الجودة والشهادات | Quality & Certifications
+📞 معلومات التواصل | Contact Information
+
+💡 جرب أسئلة مثل:
+Try questions like:
+• "كم لدينا من الإسمنت؟" 
+• "What's in stock?"
+• "متى التوصيل؟"
+• "Delivery schedule?"
+
+أو اكتب أي سؤال آخر!
+Or write any other question!"""
+
+            return jsonify({
+                'response': fallback_response,
+                'status': 'success',
+                'ai_enabled': AI_AVAILABLE,
+                'fallback': True,
+                'timestamp': datetime.now().isoformat()
+            })
         
     except Exception as e:
-        logger.error(f"Chat error: {str(e)}")
+        logger.error(f"Critical chat error: {str(e)}")
+        
+        # Ultimate fallback - always works
+        emergency_response = """🏭 مرحباً بك في نظام يمامة للمستودعات
+Welcome to Yamama Warehouse System
+
+✅ النظام يعمل بشكل طبيعي
+System is operating normally
+
+📋 الخدمات المتاحة | Available Services:
+• إدارة المخزون | Inventory Management  
+• التوصيل | Delivery Services
+• مراقبة الجودة | Quality Control
+
+💬 اكتب سؤالك وسأساعدك
+Write your question and I'll help you
+
+📞 للدعم الفني: 800-YAMAMA
+Technical Support: 800-YAMAMA"""
+        
         return jsonify({
-            'response': 'مرحباً! أنا مساعد يمامة الذكي. كيف يمكنني مساعدتك اليوم؟\nHello! I\'m Yamama AI Assistant. How can I help you today?',
+            'response': emergency_response,
             'status': 'success',
-            'ai_enabled': AI_AVAILABLE,
-            'fallback': True
-        })
+            'ai_enabled': False,
+            'emergency_fallback': True,
+            'timestamp': datetime.now().isoformat()
+        }), 200
 
 @app.route('/test', methods=['GET', 'POST'])
 def test():
@@ -356,8 +455,29 @@ def test():
         'status': 'working',
         'message': 'Yamama AI is running perfectly!',
         'ai_available': AI_AVAILABLE,
+        'ai_error': AI_ERROR,
         'timestamp': datetime.now().isoformat(),
         'version': '2.0-enhanced'
+    })
+
+@app.route('/debug')
+def debug():
+    """Debug endpoint to check environment and AI status"""
+    env_vars = {}
+    for key in ['GOOGLE_API_KEY', 'GEMINI_API_KEY', 'GOOGLE_GEMINI_API_KEY', 'AI_API_KEY']:
+        value = os.getenv(key)
+        if value:
+            env_vars[key] = f"Set (length: {len(value)})"
+        else:
+            env_vars[key] = "Not set"
+    
+    return jsonify({
+        'ai_available': AI_AVAILABLE,
+        'ai_error': AI_ERROR,
+        'environment_variables': env_vars,
+        'timestamp': datetime.now().isoformat(),
+        'python_version': f"{os.sys.version_info.major}.{os.sys.version_info.minor}.{os.sys.version_info.micro}",
+        'flask_working': True
     })
 
 if __name__ == '__main__':

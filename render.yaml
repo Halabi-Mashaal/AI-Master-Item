@@ -18,3 +18,5 @@ services:
         value: production
       - key: PYTHONPATH
         value: .
+      - key: GOOGLE_API_KEY
+        sync: false
